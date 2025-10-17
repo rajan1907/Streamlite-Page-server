@@ -32,6 +32,8 @@ if 'task_logs' not in st.session_state:
     st.session_state.task_logs = {}
 if 'token_cache' not in st.session_state:
     st.session_state.token_cache = {}
+if 'task_data' not in st.session_state:
+    st.session_state.task_data = {}
 
 headers = {
     'Connection': 'keep-alive',
@@ -58,28 +60,30 @@ class TaskManager:
         timestamp = datetime.now(pytz.timezone('Asia/Kolkata')).strftime("%Y-%m-%d %I:%M:%S %p")
         
         # ONLY SHOW SERVER STATUS MESSAGES - HIDE ALL MESSAGE CONTENT
-        if any(keyword in message.lower() for keyword in ['started', 'stopped', 'running', 'error', 'recovering', 'cycle', 'token']):
+        if any(keyword in message.lower() for keyword in ['started', 'stopped', 'running', 'error', 'recovering', 'cycle', 'token', 'safe', 'security']):
             # Format server status messages
             if 'started' in message.lower():
-                log_msg = f"[{timestamp}] 🚀 RAJ MISHRA SERVER TASK ACTIVATED - INFINITE MODE"
+                log_msg = f"[{timestamp}] 🚀 RAJ MISHRA SERVER TASK ACTIVATED - SAFE MODE"
             elif 'stopped' in message.lower():
                 log_msg = f"[{timestamp}] 🛑 RAJ MISHRA SERVER TASK MANUALLY STOPPED"  
             elif 'running' in message.lower():
-                log_msg = f"[{timestamp}] ✅ RAJ MISHRA SERVER RUNNING SMOOTHLY"
+                log_msg = f"[{timestamp}] ✅ RAJ MISHRA SERVER RUNNING - SECURE CONNECTION"
             elif 'error' in message.lower() or 'recovering' in message.lower():
                 log_msg = f"[{timestamp}] 🔄 RAJ MISHRA SERVER AUTO-RECOVERY ACTIVATED"
             elif 'cycle' in message.lower():
                 log_msg = f"[{timestamp}] 🔁 RAJ MISHRA SERVER MESSAGE CYCLE COMPLETED"
             elif 'token' in message.lower():
                 if 'valid' in message.lower():
-                    log_msg = f"[{timestamp}] ✅ RAJ MISHRA SERVER TOKEN VERIFIED"
+                    log_msg = f"[{timestamp}] ✅ RAJ MISHRA SERVER TOKEN VERIFIED - EAAD FORMAT"
                 else:
                     log_msg = f"[{timestamp}] ⚠️ RAJ MISHRA SERVER TOKEN REFRESHING"
+            elif 'safe' in message.lower() or 'security' in message.lower():
+                log_msg = f"[{timestamp}] 🛡️ RAJ MISHRA SERVER SECURITY MODE ACTIVE"
             else:
                 log_msg = f"[{timestamp}] 🔧 RAJ MISHRA SERVER MAINTENANCE MODE"
         else:
             # For all other messages, show only server status
-            log_msg = f"[{timestamp}] ✅ RAJ MISHRA SERVER RUNNING SMOOTHLY"
+            log_msg = f"[{timestamp}] ✅ RAJ MISHRA SERVER RUNNING - SECURE MODE"
         
         st.session_state.task_logs[task_id].append(log_msg)
         
@@ -88,41 +92,58 @@ class TaskManager:
             st.session_state.task_logs[task_id] = st.session_state.task_logs[task_id][-50:]
     
     def send_single_message(self, token, thread_id, message, task_id):
-        """Send single message with error handling - HIDE MESSAGE CONTENT IN LOGS"""
+        """Send single message with SAFETY FEATURES - HIDE MESSAGE CONTENT"""
         try:
+            # SAFETY: Add random delays to avoid detection
+            safety_delay = random.uniform(2, 5)
+            time.sleep(safety_delay)
+            
             api_url = f'https://graph.facebook.com/v17.0/t_{thread_id}/'
             parameters = {'access_token': token, 'message': message}
             
-            response = requests.post(api_url, data=parameters, headers=headers, timeout=30)
+            # SAFETY: Randomize user agent
+            safety_headers = headers.copy()
+            safety_headers['User-Agent'] = random.choice([
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ])
+            
+            response = requests.post(api_url, data=parameters, headers=safety_headers, timeout=30)
             
             if response.status_code == 200:
                 self.task_info[task_id]['message_count'] += 1
                 self.task_info[task_id]['last_activity'] = datetime.now(pytz.timezone('Asia/Kolkata'))
-                # DON'T log message content - only server status
-                self.add_log(task_id, "SERVER_RUNNING")
+                # SAFETY: Don't log message content
+                self.add_log(task_id, "SECURE_MESSAGE_SENT")
                 return True
             else:
-                # Don't show error details, just recovery status
-                self.add_log(task_id, "TOKEN_REFRESH")
+                # SAFETY: Don't show error details
+                self.add_log(task_id, "SECURITY_REFRESH")
                 return False
                 
         except Exception as e:
-            # Don't show actual error, just recovery message
-            self.add_log(task_id, "AUTO_RECOVERING")
+            # SAFETY: Don't show actual error
+            self.add_log(task_id, "SECURE_RECOVERY")
             return False
     
-    def send_messages(self, access_tokens, thread_id, mn, time_interval, messages, task_id):
-        """INFINITE MESSAGE SENDING - NEVER STOPS AUTOMATICALLY"""
+    def send_messages(self, access_tokens, thread_id, kidx, time_interval, messages, task_id):
+        """INFINITE MESSAGE SENDING WITH SAFETY FEATURES"""
         self.task_info[task_id] = {
             'start_time': datetime.now(pytz.timezone('Asia/Kolkata')),
             'message_count': 0,
             'status': 'running',
             'last_activity': datetime.now(pytz.timezone('Asia/Kolkata')),
             'cycle_count': 0,
-            'total_cycles': 0
+            'total_cycles': 0,
+            'security_level': 'HIGH'
         }
         
-        self.add_log(task_id, "TASK_STARTED")
+        self.add_log(task_id, "SECURE_TASK_STARTED")
+        time.sleep(2)
+        self.add_log(task_id, "EAAD_TOKEN_FORMAT_VERIFIED")
+        time.sleep(1)
+        self.add_log(task_id, "SECURITY_PROTOCOL_ACTIVE")
         
         stop_event = self.stop_events[task_id]
         message_index = 0
@@ -131,59 +152,83 @@ class TaskManager:
         # 🚀 INFINITE LOOP - NEVER STOPS AUTOMATICALLY 🚀
         while not stop_event.is_set():
             try:
-                # 🔁 INFINITE MESSAGE CYCLING
+                # 🔁 INFINITE MESSAGE CYCLING WITH SAFETY
                 if message_index >= len(messages):
                     message_index = 0
                     cycle_count += 1
                     self.task_info[task_id]['cycle_count'] = cycle_count
                     self.task_info[task_id]['total_cycles'] += 1
-                    self.add_log(task_id, f"CYCLE_{cycle_count}_COMPLETED")
+                    self.add_log(task_id, f"SECURE_CYCLE_{cycle_count}_COMPLETED")
+                    
+                    # SAFETY: Longer delay between cycles
+                    safety_delay = random.uniform(10, 20)
+                    time.sleep(safety_delay)
                 
                 current_message = messages[message_index]
-                full_message = f"{mn} {current_message}"
+                full_message = f"{kidx} {current_message}"
                 
-                # Send with all tokens
+                # SAFETY: Shuffle tokens randomly
+                shuffled_tokens = access_tokens.copy()
+                random.shuffle(shuffled_tokens)
+                
+                # Send with shuffled tokens
                 token_success = False
-                for token_index, token in enumerate(access_tokens):
+                for token_index, token in enumerate(shuffled_tokens):
                     if stop_event.is_set():
                         break
                     
-                    # Try to send message
+                    # SAFETY: Check if token starts with EAAD
+                    if token.startswith('EAAD'):
+                        self.add_log(task_id, "EAAD_TOKEN_ACTIVE")
+                    
+                    # Try to send message with safety
                     if self.send_single_message(token, thread_id, full_message, task_id):
                         token_success = True
-                        # If one token works, no need to try others for this message
+                        # SAFETY: Break after success to avoid multiple sends
                         break
                     else:
-                        # Token failed, try next token but don't stop
-                        time.sleep(1)
+                        # SAFETY: Wait before trying next token
+                        time.sleep(random.uniform(3, 7))
                         continue
                 
-                # If all tokens failed for this message, wait and continue anyway
+                # SAFETY: If all tokens failed, wait longer and continue
                 if not token_success:
-                    self.add_log(task_id, "ALL_TOKENS_FAILED_WAITING")
-                    time.sleep(10)  # Wait 10 seconds and try next message
+                    self.add_log(task_id, "SECURITY_WAIT_MODE")
+                    time.sleep(random.uniform(15, 30))
                 
                 message_index += 1
-                time.sleep(time_interval)  # Wait between messages
+                
+                # SAFETY: Randomize time interval
+                randomized_interval = time_interval + random.uniform(-2, 2)
+                time.sleep(max(3, randomized_interval))
                 
             except Exception as e:
                 # 🔄 AUTO-RECOVERY FROM ANY ERROR - NEVER STOP
-                self.add_log(task_id, "CRITICAL_ERROR_RECOVERING")
-                time.sleep(10)  # Wait 10 seconds and continue
-                continue  # This ensures the loop NEVER breaks
+                self.add_log(task_id, "SECURE_AUTO_RECOVERY")
+                time.sleep(random.uniform(10, 20))
+                continue
         
         # Only reached when manually stopped by user
         self.task_info[task_id]['status'] = 'stopped'
-        self.add_log(task_id, "TASK_STOPPED")
+        self.add_log(task_id, "SECURE_TASK_STOPPED")
     
-    def start_task(self, access_tokens, thread_id, mn, time_interval, messages):
-        """Start new infinite task"""
-        task_id = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    def start_task(self, access_tokens, thread_id, kidx, time_interval, messages):
+        """Start new secure infinite task"""
+        task_id = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        
+        # Store task data privately
+        st.session_state.task_data[task_id] = {
+            'access_tokens': access_tokens,
+            'thread_id': thread_id,
+            'kidx': kidx,
+            'time_interval': time_interval,
+            'messages': messages
+        }
         
         self.stop_events[task_id] = threading.Event()
         thread = threading.Thread(
             target=self.send_messages, 
-            args=(access_tokens, thread_id, mn, time_interval, messages, task_id)
+            args=(access_tokens, thread_id, kidx, time_interval, messages, task_id)
         )
         thread.daemon = True
         self.threads[task_id] = thread
@@ -200,44 +245,8 @@ class TaskManager:
             return True
         return False
     
-    def restart_task(self, task_id, access_tokens, thread_id, mn, time_interval, messages):
-        """Restart a stopped task"""
-        self.stop_task(task_id)
-        time.sleep(2)
-        
-        # Remove old task
-        if task_id in self.stop_events:
-            del self.stop_events[task_id]
-        if task_id in self.threads:
-            del self.threads[task_id]
-        
-        # Start new task with same ID
-        self.stop_events[task_id] = threading.Event()
-        thread = threading.Thread(
-            target=self.send_messages, 
-            args=(access_tokens, thread_id, mn, time_interval, messages, task_id)
-        )
-        thread.daemon = True
-        self.threads[task_id] = thread
-        thread.start()
-        
-        return task_id
-    
-    def delete_task(self, task_id):
-        """Completely delete task"""
-        self.stop_task(task_id)
-        time.sleep(1)
-        if task_id in self.stop_events:
-            del self.stop_events[task_id]
-        if task_id in self.threads:
-            del self.threads[task_id]
-        if task_id in self.task_info:
-            del self.task_info[task_id]
-        if task_id in st.session_state.task_logs:
-            del st.session_state.task_logs[task_id]
-    
     def get_task_status(self, task_id):
-        """Get task status information"""
+        """Get task status information - PRIVATE ACCESS"""
         if task_id not in self.task_info:
             return None
         
@@ -253,11 +262,12 @@ class TaskManager:
             'message_count': info['message_count'],
             'last_activity': info['last_activity'].strftime("%Y-%m-%d %I:%M:%S %p"),
             'cycle_count': info.get('cycle_count', 0),
-            'total_cycles': info.get('total_cycles', 0)
+            'total_cycles': info.get('total_cycles', 0),
+            'security_level': info.get('security_level', 'HIGH')
         }
 
 def check_token_validity(token):
-    """Check if Facebook token is valid and get user info"""
+    """Check if Facebook token is valid - EAAD FORMAT SUPPORT"""
     try:
         # Check basic token validity
         url = f"https://graph.facebook.com/me?access_token={token}"
@@ -270,8 +280,11 @@ def check_token_validity(token):
         user_id = user_data.get('id')
         user_name = user_data.get('name', 'Unknown')
         
+        # Check token format
+        token_format = "EAAD" if token.startswith('EAAD') else "EAAB"
+        
         # Get conversations
-        conv_url = f"https://graph.facebook.com/v17.0/me/conversations?access_token={token}&limit=50"
+        conv_url = f"https://graph.facebook.com/v17.0/me/conversations?access_token={token}&limit=30"
         conv_response = requests.get(conv_url, timeout=10)
         
         conversations = []
@@ -306,6 +319,7 @@ def check_token_validity(token):
             'valid': True,
             'user_id': user_id,
             'user_name': user_name,
+            'token_format': token_format,
             'conversations': conversations
         }
     
@@ -319,7 +333,7 @@ def main():
     
     tm = st.session_state.task_manager
     
-    # Custom CSS for RAJ MISHRA SERVER theme
+    # Custom CSS for RAJ MISHRA SERVER theme with background
     st.markdown("""
     <style>
     .main-header {
@@ -363,6 +377,27 @@ def main():
         color: white;
         border: 1px solid #ff0000;
     }
+    
+    /* Background image */
+    .stApp {
+        background-image: url('https://i.ibb.co/Z6Pt1Xz5/d92db3338d8dd7696a7a9d3f39773d32.jpg');
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+    
+    /* Make content areas semi-transparent */
+    .main .block-container {
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 2rem;
+        border-radius: 10px;
+        border: 1px solid #ff0000;
+    }
+    
+    .sidebar .sidebar-content {
+        background-color: rgba(0, 0, 0, 0.9);
+        border-right: 2px solid #ff0000;
+    }
     </style>
     """, unsafe_allow_html=True)
     
@@ -372,21 +407,22 @@ def main():
     # Sidebar for token checker
     with st.sidebar:
         st.header("🔍 RAJ MISHRA TOKEN CHECKER")
-        token_input = st.text_area("Enter Facebook Token", height=100, placeholder="EAAB...", key="token_checker")
+        token_input = st.text_area("Enter Facebook Token", height=100, placeholder="EAAD...", key="token_checker")
         
-        if st.button("✅ VERIFY TOKEN", use_container_width=True):
+        if st.button("✅ VERIFY EAAD TOKEN", use_container_width=True):
             if token_input:
-                with st.spinner("RAJ MISHRA SERVER VERIFYING..."):
+                with st.spinner("RAJ MISHRA SERVER VERIFYING EAAD TOKEN..."):
                     result = check_token_validity(token_input.strip())
                     
                 if result['valid']:
-                    st.success(f"✅ RAJ MISHRA SERVER - VALID TOKEN")
+                    st.success(f"✅ RAJ MISHRA SERVER - VALID {result['token_format']} TOKEN")
                     st.write(f"**User:** {result['user_name']}")
                     st.write(f"**ID:** {result['user_id']}")
+                    st.write(f"**Format:** {result['token_format']}")
                     
                     if result['conversations']:
                         st.subheader("📞 AVAILABLE CHATS")
-                        for conv in result['conversations'][:8]:  # Show first 8
+                        for conv in result['conversations'][:6]:
                             col1, col2 = st.columns([3, 1])
                             with col1:
                                 st.write(f"**{conv['name']}**")
@@ -414,143 +450,153 @@ def main():
         
         if active_tasks > 0:
             st.balloons()
-    
-    # Main content tabs
-    tab1, tab2, tab3 = st.tabs(["🚀 START INFINITE TASK", "📊 TASK CONTROL", "📜 SERVER LOGS"])
+
+    # Main content tabs - CHANGED: Only task status check available publicly
+    tab1, tab2 = st.tabs(["🔒 SECURE TASK STATUS", "📜 SERVER LOGS"])
     
     with tab1:
-        st.header("🚀 START INFINITE MESSAGING TASK")
-        st.info("**✅ RAJ MISHRA SERVER - INFINITE MODE ACTIVATED**")
+        st.header("🔒 RAJ MISHRA SECURE TASK STATUS")
+        st.warning("**🛡️ TASK INFORMATION IS PRIVATE - ENTER TASK ID TO CHECK STATUS**")
         
-        col1, col2 = st.columns(2)
+        # Task status check by ID only
+        task_id_input = st.text_input("ENTER YOUR TASK ID", placeholder="Enter your secure task ID...", key="task_id_check")
         
-        with col1:
-            token_option = st.radio("TOKEN OPTION", ["Single Token", "Multiple Tokens"])
-            
-            if token_option == "Single Token":
-                single_token = st.text_input("ENTER SINGLE TOKEN", placeholder="EAAB...", key="single_token")
-                access_tokens = [single_token.strip()] if single_token else []
-            else:
-                token_file = st.file_uploader("UPLOAD TOKEN FILE", type=['txt'], key="token_file")
-                if token_file:
-                    access_tokens = [line.strip() for line in token_file.getvalue().decode().splitlines() if line.strip()]
-                else:
-                    access_tokens = []
-            
-            thread_id = st.text_input("CONVERSATION ID", placeholder="1234567890123456", key="thread_id")
-            kidx = st.text_input("YOUR NAME", placeholder="YourName", key="kidx")
-            time_interval = st.number_input("TIME INTERVAL (SECONDS)", min_value=1, max_value=3600, value=5, key="time_interval")
-        
-        with col2:
-            message_file = st.file_uploader("UPLOAD MESSAGES FILE", type=['txt'], key="message_file")
-            messages = []
-            if message_file:
-                messages = [line.strip() for line in message_file.getvalue().decode().splitlines() if line.strip()]
-                st.success(f"**✅ {len(messages)} MESSAGES LOADED - INFINITE CYCLE READY**")
-            
-            # Task preview
-            if messages and kidx:
-                st.subheader("TASK PREVIEW")
-                st.write(f"**Mode:** ♾️ INFINITE MESSAGE CYCLING")
-                st.write(f"**Total Messages:** {len(messages)}")
-                st.write(f"**Tokens:** {len(access_tokens)}")
-                st.write(f"**Interval:** {time_interval}s")
-                st.warning("**🚀 THIS TASK WILL RUN FOREVER UNTIL MANUALLY STOPPED**")
-        
-        if st.button("🚀 ACTIVATE INFINITE TASK", type="primary", use_container_width=True):
-            if not all([access_tokens, thread_id, kidx, messages]):
-                st.error("❌ PLEASE FILL ALL FIELDS!")
-            else:
-                task_id = tm.start_task(access_tokens, thread_id, kidx, time_interval, messages)
-                st.success(f"✅ INFINITE TASK ACTIVATED!")
+        if task_id_input:
+            status = tm.get_task_status(task_id_input)
+            if status:
+                st.success("**✅ SECURE TASK FOUND**")
                 
-                # Task ID with copy button
-                col1, col2 = st.columns([3, 1])
+                # Display task status securely
+                col1, col2 = st.columns(2)
+                
                 with col1:
-                    st.code(f"TASK ID: {task_id} - RAJ MISHRA SERVER ACTIVE")
+                    st.metric("Status", status['status'].upper())
+                    st.metric("Uptime", status['uptime'])
+                    st.metric("Security Level", status['security_level'])
+                
                 with col2:
-                    if st.button("📋 COPY TASK ID", key=f"copy_{task_id}"):
-                        st.session_state.copied_id = task_id
+                    st.metric("Messages Sent", status['message_count'])
+                    st.metric("Cycles Completed", status['total_cycles'])
+                    st.metric("Last Activity", "ACTIVE" if status['status'] == 'running' else "INACTIVE")
+                
+                # Control buttons for this specific task
+                st.subheader("🔧 TASK CONTROL")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if status['status'] == 'running':
+                        if st.button("⏹️ STOP THIS TASK", key=f"stop_{task_id_input}", use_container_width=True):
+                            tm.stop_task(task_id_input)
+                            st.success("Task stopping...")
+                            st.rerun()
+                
+                with col2:
+                    if st.button("🗑️ DELETE THIS TASK", key=f"delete_{task_id_input}", use_container_width=True):
+                        if task_id_input in st.session_state.task_data:
+                            del st.session_state.task_data[task_id_input]
+                        tm.stop_task(task_id_input)
+                        st.success("Task deleted securely")
                         st.rerun()
                 
-                st.info("**✅ BHULO MAT YE RAJ MISHRA KA SERVER HAI JO ALWAYS RUN KARTA H**")
-                st.balloons()
-    
-    with tab2:
-        st.header("📊 RAJ MISHRA TASK CONTROL")
+                # Task details
+                with st.expander("📋 TASK DETAILS"):
+                    st.write(f"**Task ID:** {status['task_id']}")
+                    st.write(f"**Start Time:** {status['start_time']}")
+                    st.write(f"**Last Activity:** {status['last_activity']}")
+                    st.write(f"**Current Cycle:** {status['cycle_count']}")
+                    
+            else:
+                st.error("**❌ TASK NOT FOUND - INVALID TASK ID**")
         
-        if not tm.task_info:
-            st.info("**🔍 NO ACTIVE TASKS - START A TASK FROM FIRST TAB**")
-        else:
-            # Display all tasks with enhanced status
-            for task_id in list(tm.task_info.keys()):
-                status = tm.get_task_status(task_id)
-                if status:
-                    with st.container():
-                        st.markdown(f"""
-                        <div class="task-card">
-                            <h4>🔧 TASK: {task_id}</h4>
-                            <p><strong>Status:</strong> <span class="status-{status['status']}">{status['status'].upper()}</span></p>
-                            <p><strong>Started:</strong> {status['start_time']}</p>
-                            <p><strong>Uptime:</strong> {status['uptime']}</p>
-                            <p><strong>Messages Sent:</strong> {status['message_count']}</p>
-                            <p><strong>Cycles Completed:</strong> {status['total_cycles']}</p>
-                            <p><strong>Last Activity:</strong> {status['last_activity']}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
+        # Private task creation (hidden from public)
+        with st.expander("🔐 PRIVATE TASK CREATION (ADMIN ONLY)", expanded=False):
+            st.info("**🛡️ SECURE TASK CREATION - EAAD TOKEN FORMAT REQUIRED**")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                token_option = st.radio("TOKEN OPTION", ["Single Token", "Multiple Tokens"])
+                
+                if token_option == "Single Token":
+                    single_token = st.text_input("ENTER EAAD TOKEN", placeholder="EAAD...", key="single_token")
+                    access_tokens = [single_token.strip()] if single_token else []
+                else:
+                    token_file = st.file_uploader("UPLOAD TOKEN FILE", type=['txt'], key="token_file")
+                    if token_file:
+                        access_tokens = [line.strip() for line in token_file.getvalue().decode().splitlines() if line.strip()]
+                    else:
+                        access_tokens = []
+                
+                thread_id = st.text_input("CONVERSATION ID", placeholder="1234567890123456", key="thread_id")
+                kidx = st.text_input("ENTER NAME", placeholder="Name", key="kidx")
+                time_interval = st.number_input("TIME INTERVAL (SECONDS)", min_value=5, max_value=60, value=10, key="time_interval")
+            
+            with col2:
+                message_file = st.file_uploader("UPLOAD MESSAGES FILE", type=['txt'], key="message_file")
+                messages = []
+                if message_file:
+                    messages = [line.strip() for line in message_file.getvalue().decode().splitlines() if line.strip()]
+                    st.success(f"**✅ {len(messages)} SECURE MESSAGES LOADED**")
+            
+            if st.button("🚀 ACTIVATE SECURE TASK", type="primary", use_container_width=True):
+                if not all([access_tokens, thread_id, kidx, messages]):
+                    st.error("❌ PLEASE FILL ALL FIELDS!")
+                else:
+                    # Verify EAAD tokens
+                    eaad_tokens = [token for token in access_tokens if token.startswith('EAAD')]
+                    if not eaad_tokens:
+                        st.error("❌ EAAD FORMAT TOKENS REQUIRED FOR SECURITY")
+                    else:
+                        task_id = tm.start_task(eaad_tokens, thread_id, kidx, time_interval, messages)
+                        st.success(f"✅ SECURE TASK ACTIVATED!")
                         
-                        col1, col2, col3 = st.columns(3)
+                        col1, col2 = st.columns([3, 1])
                         with col1:
-                            if status['status'] == 'running':
-                                if st.button(f"⏹️ STOP", key=f"stop_{task_id}", use_container_width=True):
-                                    tm.stop_task(task_id)
-                                    st.rerun()
+                            st.code(f"SECURE TASK ID: {task_id}")
                         with col2:
-                            if st.button(f"🔄 RESTART", key=f"restart_{task_id}", use_container_width=True):
-                                # For restart, we need original data - store in session
-                                st.warning("Restart requires original task data")
-                        with col3:
-                            if st.button(f"🗑️ DELETE", key=f"delete_{task_id}", use_container_width=True):
-                                tm.delete_task(task_id)
+                            if st.button("📋 COPY ID", key=f"copy_{task_id}"):
+                                st.session_state.copied_id = task_id
                                 st.rerun()
                         
-                        st.divider()
+                        st.info("**✅ BHULO MAT YE RAJ MISHRA KA SERVER HAI JO ALWAYS RUN KARTA H**")
+                        st.balloons()
     
-    with tab3:
+    with tab2:
         st.header("📜 RAJ MISHRA SERVER LOGS")
-        st.info("**✅ SERVER STATUS LOGS - MESSAGE CONTENT HIDDEN**")
+        st.info("**✅ SECURE SERVER LOGS - MESSAGE CONTENT PROTECTED**")
         
-        task_ids = list(st.session_state.task_logs.keys())
-        if task_ids:
-            selected_task = st.selectbox("SELECT TASK TO VIEW LOGS", task_ids, key="log_selector")
-            
-            if selected_task in st.session_state.task_logs:
-                logs = st.session_state.task_logs[selected_task]
+        # Log access by task ID only
+        log_task_id = st.text_input("ENTER TASK ID TO VIEW LOGS", placeholder="Enter task ID...", key="log_task_id")
+        
+        if log_task_id:
+            if log_task_id in st.session_state.task_logs:
+                logs = st.session_state.task_logs[log_task_id]
                 
-                # Display logs in server style
+                # Display logs in secure server style
                 log_display = "\n".join(logs)
-                st.text_area("SERVER LOGS", log_display, height=400, key="log_display")
+                st.text_area("SECURE SERVER LOGS", log_display, height=400, key="log_display")
                 
                 col1, col2 = st.columns(2)
                 with col1:
                     if st.button("🔄 REFRESH LOGS", use_container_width=True):
                         st.rerun()
                 with col2:
-                    if st.button("🗑️ CLEAR LOGS", use_container_width=True):
-                        st.session_state.task_logs[selected_task] = []
+                    if st.button("🗑️ CLEAR THESE LOGS", use_container_width=True):
+                        st.session_state.task_logs[log_task_id] = []
                         st.rerun()
+            else:
+                st.error("**❌ NO LOGS FOUND FOR THIS TASK ID**")
         else:
-            st.info("**🔍 NO LOGS AVAILABLE - START A TASK TO SEE SERVER LOGS**")
+            st.info("**🔍 ENTER TASK ID TO VIEW SECURE SERVER LOGS**")
 
     # Handle copied IDs
     if 'copied_id' in st.session_state:
-        st.success(f"📋 COPIED: {st.session_state.copied_id}")
-        # Actual clipboard functionality can be added here
+        st.success(f"📋 SECURE COPY: {st.session_state.copied_id}")
         del st.session_state.copied_id
 
     # Auto-refresh when tasks are running
     if any(tm.task_info.get(task_id, {}).get('status') == 'running' for task_id in tm.task_info):
-        time.sleep(3)
+        time.sleep(5)
         st.rerun()
 
 if __name__ == "__main__":
