@@ -16,6 +16,7 @@ import pandas as pd
 import pytz
 import sys
 import traceback
+import base64
 
 # Configure page
 st.set_page_config(
@@ -34,6 +35,8 @@ if 'token_cache' not in st.session_state:
     st.session_state.token_cache = {}
 if 'task_data' not in st.session_state:
     st.session_state.task_data = {}
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
 
 headers = {
     'Connection': 'keep-alive',
@@ -59,31 +62,8 @@ class TaskManager:
         
         timestamp = datetime.now(pytz.timezone('Asia/Kolkata')).strftime("%Y-%m-%d %I:%M:%S %p")
         
-        # ONLY SHOW SERVER STATUS MESSAGES - HIDE ALL MESSAGE CONTENT
-        if any(keyword in message.lower() for keyword in ['started', 'stopped', 'running', 'error', 'recovering', 'cycle', 'token', 'safe', 'security']):
-            # Format server status messages
-            if 'started' in message.lower():
-                log_msg = f"[{timestamp}] 🚀 RAJ MISHRA SERVER TASK ACTIVATED - SAFE MODE"
-            elif 'stopped' in message.lower():
-                log_msg = f"[{timestamp}] 🛑 RAJ MISHRA SERVER TASK MANUALLY STOPPED"  
-            elif 'running' in message.lower():
-                log_msg = f"[{timestamp}] ✅ RAJ MISHRA SERVER RUNNING - SECURE CONNECTION"
-            elif 'error' in message.lower() or 'recovering' in message.lower():
-                log_msg = f"[{timestamp}] 🔄 RAJ MISHRA SERVER AUTO-RECOVERY ACTIVATED"
-            elif 'cycle' in message.lower():
-                log_msg = f"[{timestamp}] 🔁 RAJ MISHRA SERVER MESSAGE CYCLE COMPLETED"
-            elif 'token' in message.lower():
-                if 'valid' in message.lower():
-                    log_msg = f"[{timestamp}] ✅ RAJ MISHRA SERVER TOKEN VERIFIED - EAAD FORMAT"
-                else:
-                    log_msg = f"[{timestamp}] ⚠️ RAJ MISHRA SERVER TOKEN REFRESHING"
-            elif 'safe' in message.lower() or 'security' in message.lower():
-                log_msg = f"[{timestamp}] 🛡️ RAJ MISHRA SERVER SECURITY MODE ACTIVE"
-            else:
-                log_msg = f"[{timestamp}] 🔧 RAJ MISHRA SERVER MAINTENANCE MODE"
-        else:
-            # For all other messages, show only server status
-            log_msg = f"[{timestamp}] ✅ RAJ MISHRA SERVER RUNNING - SECURE MODE"
+        # ONLY SHOW SERVER STATUS MESSAGES
+        log_msg = f"[{timestamp}] {message}"
         
         st.session_state.task_logs[task_id].append(log_msg)
         
@@ -91,44 +71,52 @@ class TaskManager:
         if len(st.session_state.task_logs[task_id]) > 50:
             st.session_state.task_logs[task_id] = st.session_state.task_logs[task_id][-50:]
     
-    def send_single_message(self, token, thread_id, message, task_id):
-        """Send single message with SAFETY FEATURES - HIDE MESSAGE CONTENT"""
+    def send_single_message(self, token, thread_id, full_message, task_id):
+        """Send single message with PROPER FACEBOOK API"""
         try:
             # SAFETY: Add random delays to avoid detection
-            safety_delay = random.uniform(2, 5)
+            safety_delay = random.uniform(1, 3)
             time.sleep(safety_delay)
             
-            api_url = f'https://graph.facebook.com/v17.0/t_{thread_id}/'
-            parameters = {'access_token': token, 'message': message}
+            # CORRECT Facebook Graph API endpoint for messages
+            api_url = f'https://graph.facebook.com/v17.0/{thread_id}/messages'
             
-            # SAFETY: Randomize user agent
-            safety_headers = headers.copy()
-            safety_headers['User-Agent'] = random.choice([
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            ])
+            parameters = {
+                'access_token': token,
+                'message': full_message,
+                'recipient': {'id': thread_id}
+            }
             
-            response = requests.post(api_url, data=parameters, headers=safety_headers, timeout=30)
+            # Use proper JSON format
+            response = requests.post(
+                api_url, 
+                json=parameters, 
+                headers=headers, 
+                timeout=30
+            )
             
             if response.status_code == 200:
                 self.task_info[task_id]['message_count'] += 1
                 self.task_info[task_id]['last_activity'] = datetime.now(pytz.timezone('Asia/Kolkata'))
-                # SAFETY: Don't log message content
-                self.add_log(task_id, "SECURE_MESSAGE_SENT")
+                self.add_log(task_id, "✅ MESSAGE SENT SUCCESSFULLY")
                 return True
             else:
-                # SAFETY: Don't show error details
-                self.add_log(task_id, "SECURITY_REFRESH")
+                error_msg = f"❌ SEND FAILED: {response.status_code}"
+                try:
+                    error_data = response.json()
+                    if 'error' in error_data:
+                        error_msg = f"❌ SEND FAILED: {error_data['error'].get('message', 'Unknown error')}"
+                except:
+                    pass
+                self.add_log(task_id, error_msg)
                 return False
                 
         except Exception as e:
-            # SAFETY: Don't show actual error
-            self.add_log(task_id, "SECURE_RECOVERY")
+            self.add_log(task_id, f"⚠️ SEND ERROR: {str(e)}")
             return False
     
-    def send_messages(self, access_tokens, thread_id, kidx, time_interval, messages, task_id):
-        """INFINITE MESSAGE SENDING WITH SAFETY FEATURES"""
+    def send_messages(self, access_tokens, thread_id, kidx, last_name, time_interval, messages, task_id):
+        """INFINITE MESSAGE SENDING WITH PROPER FORMAT"""
         self.task_info[task_id] = {
             'start_time': datetime.now(pytz.timezone('Asia/Kolkata')),
             'message_count': 0,
@@ -139,11 +127,8 @@ class TaskManager:
             'security_level': 'HIGH'
         }
         
-        self.add_log(task_id, "SECURE_TASK_STARTED")
-        time.sleep(2)
-        self.add_log(task_id, "EAAD_TOKEN_FORMAT_VERIFIED")
-        time.sleep(1)
-        self.add_log(task_id, "SECURITY_PROTOCOL_ACTIVE")
+        self.add_log(task_id, "🚀 TASK STARTED - RAJ MISHRA SERVER")
+        self.add_log(task_id, f"📝 MESSAGE FORMAT: {kidx} + MESSAGE + {last_name}")
         
         stop_event = self.stop_events[task_id]
         message_index = 0
@@ -152,68 +137,57 @@ class TaskManager:
         # 🚀 INFINITE LOOP - NEVER STOPS AUTOMATICALLY 🚀
         while not stop_event.is_set():
             try:
-                # 🔁 INFINITE MESSAGE CYCLING WITH SAFETY
+                # 🔁 INFINITE MESSAGE CYCLING
                 if message_index >= len(messages):
                     message_index = 0
                     cycle_count += 1
                     self.task_info[task_id]['cycle_count'] = cycle_count
                     self.task_info[task_id]['total_cycles'] += 1
-                    self.add_log(task_id, f"SECURE_CYCLE_{cycle_count}_COMPLETED")
-                    
-                    # SAFETY: Longer delay between cycles
-                    safety_delay = random.uniform(10, 20)
-                    time.sleep(safety_delay)
+                    self.add_log(task_id, f"🔄 CYCLE {cycle_count} COMPLETED")
                 
                 current_message = messages[message_index]
-                full_message = f"{kidx} {current_message}"
+                # CORRECT MESSAGE FORMAT: kidx + message + last_name
+                full_message = f"{kidx} {current_message} {last_name}"
                 
-                # SAFETY: Shuffle tokens randomly
+                # Shuffle tokens for better distribution
                 shuffled_tokens = access_tokens.copy()
                 random.shuffle(shuffled_tokens)
                 
-                # Send with shuffled tokens
+                # Try to send with each token until success
                 token_success = False
-                for token_index, token in enumerate(shuffled_tokens):
+                for token in shuffled_tokens:
                     if stop_event.is_set():
                         break
                     
-                    # SAFETY: Check if token starts with EAAD
-                    if token.startswith('EAAD'):
-                        self.add_log(task_id, "EAAD_TOKEN_ACTIVE")
-                    
-                    # Try to send message with safety
                     if self.send_single_message(token, thread_id, full_message, task_id):
                         token_success = True
-                        # SAFETY: Break after success to avoid multiple sends
                         break
                     else:
-                        # SAFETY: Wait before trying next token
-                        time.sleep(random.uniform(3, 7))
-                        continue
+                        # Wait before trying next token
+                        time.sleep(random.uniform(2, 5))
                 
-                # SAFETY: If all tokens failed, wait longer and continue
+                # If all tokens failed, wait and continue with next message
                 if not token_success:
-                    self.add_log(task_id, "SECURITY_WAIT_MODE")
-                    time.sleep(random.uniform(15, 30))
+                    self.add_log(task_id, "⏳ ALL TOKENS FAILED - WAITING FOR NEXT CYCLE")
+                    time.sleep(10)
                 
                 message_index += 1
                 
-                # SAFETY: Randomize time interval
-                randomized_interval = time_interval + random.uniform(-2, 2)
-                time.sleep(max(3, randomized_interval))
+                # Use exact time interval without randomization for consistency
+                time.sleep(time_interval)
                 
             except Exception as e:
-                # 🔄 AUTO-RECOVERY FROM ANY ERROR - NEVER STOP
-                self.add_log(task_id, "SECURE_AUTO_RECOVERY")
-                time.sleep(random.uniform(10, 20))
+                # 🔄 AUTO-RECOVERY FROM ANY ERROR
+                self.add_log(task_id, f"🛠️ AUTO-RECOVERY: {str(e)}")
+                time.sleep(10)
                 continue
         
-        # Only reached when manually stopped by user
+        # Only reached when manually stopped
         self.task_info[task_id]['status'] = 'stopped'
-        self.add_log(task_id, "SECURE_TASK_STOPPED")
+        self.add_log(task_id, "🛑 TASK STOPPED BY USER")
     
-    def start_task(self, access_tokens, thread_id, kidx, time_interval, messages):
-        """Start new secure infinite task"""
+    def start_task(self, access_tokens, thread_id, kidx, last_name, time_interval, messages):
+        """Start new task with proper parameters"""
         task_id = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
         
         # Store task data privately
@@ -221,6 +195,7 @@ class TaskManager:
             'access_tokens': access_tokens,
             'thread_id': thread_id,
             'kidx': kidx,
+            'last_name': last_name,
             'time_interval': time_interval,
             'messages': messages
         }
@@ -228,7 +203,7 @@ class TaskManager:
         self.stop_events[task_id] = threading.Event()
         thread = threading.Thread(
             target=self.send_messages, 
-            args=(access_tokens, thread_id, kidx, time_interval, messages, task_id)
+            args=(access_tokens, thread_id, kidx, last_name, time_interval, messages, task_id)
         )
         thread.daemon = True
         self.threads[task_id] = thread
@@ -246,7 +221,7 @@ class TaskManager:
         return False
     
     def get_task_status(self, task_id):
-        """Get task status information - PRIVATE ACCESS"""
+        """Get task status information"""
         if task_id not in self.task_info:
             return None
         
@@ -267,7 +242,7 @@ class TaskManager:
         }
 
 def check_token_validity(token):
-    """Check if Facebook token is valid - EAAD FORMAT SUPPORT"""
+    """Check if Facebook token is valid"""
     try:
         # Check basic token validity
         url = f"https://graph.facebook.com/me?access_token={token}"
@@ -284,35 +259,38 @@ def check_token_validity(token):
         token_format = "EAAD" if token.startswith('EAAD') else "EAAB"
         
         # Get conversations
-        conv_url = f"https://graph.facebook.com/v17.0/me/conversations?access_token={token}&limit=30"
+        conv_url = f"https://graph.facebook.com/v17.0/me/conversations?access_token={token}&limit=20"
         conv_response = requests.get(conv_url, timeout=10)
         
         conversations = []
         if conv_response.status_code == 200:
             conv_data = conv_response.json().get('data', [])
             for conv in conv_data:
-                conv_id = conv.get('id', '').replace('t_', '')
-                conv_name = "Unknown"
+                conv_id = conv.get('id', '')
+                # Remove 't_' prefix if present
+                if conv_id.startswith('t_'):
+                    conv_id = conv_id[2:]
                 
-                # Try to get conversation name
+                conv_name = "Unknown"
                 try:
-                    participants_url = f"https://graph.facebook.com/v17.0/{conv['id']}?access_token={token}&fields=participants,name"
-                    part_response = requests.get(participants_url, timeout=10)
-                    if part_response.status_code == 200:
-                        part_data = part_response.json()
-                        conv_name = part_data.get('name', 'Unknown')
+                    # Get conversation details
+                    details_url = f"https://graph.facebook.com/v17.0/{conv['id']}?access_token={token}&fields=name,participants"
+                    details_response = requests.get(details_url, timeout=10)
+                    if details_response.status_code == 200:
+                        details_data = details_response.json()
+                        conv_name = details_data.get('name', 'Unknown')
                         if conv_name == 'Unknown':
-                            participants = part_data.get('participants', {}).get('data', [])
-                            if participants:
-                                names = [p.get('name', '') for p in participants if p.get('name')]
-                                conv_name = ', '.join(names) if names else 'Group Chat'
+                            participants = details_data.get('participants', {}).get('data', [])
+                            names = [p.get('name', '') for p in participants if p.get('name')]
+                            if names:
+                                conv_name = ', '.join(names)
                 except:
                     pass
                 
                 conversations.append({
                     'id': conv_id,
-                    'name': conv_name,
-                    'type': 'Group' if len(conv.get('participants', {}).get('data', [])) > 2 else 'Individual'
+                    'name': conv_name[:50] + '...' if len(conv_name) > 50 else conv_name,
+                    'type': 'Group' if 'participants' in conv and len(conv.get('participants', {}).get('data', [])) > 2 else 'Individual'
                 })
         
         return {
@@ -326,14 +304,125 @@ def check_token_validity(token):
     except Exception as e:
         return {'valid': False, 'error': str(e)}
 
+def get_base64_of_bin_file(bin_file):
+    """Convert image to base64 for background"""
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def set_background_image():
+    """Set background image using base64"""
+    st.markdown(f"""
+    <style>
+    .stApp {{
+        background-image: url("https://i.ibb.co/Z6Pt1Xz5/d92db3338d8dd7696a7a9d3f39773d32.jpg");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }}
+    
+    /* Make content readable */
+    .main .block-container {{
+        background-color: rgba(0, 0, 0, 0.85);
+        padding: 2rem;
+        border-radius: 15px;
+        border: 2px solid #ff0000;
+        backdrop-filter: blur(5px);
+    }}
+    
+    .sidebar .sidebar-content {{
+        background-color: rgba(0, 0, 0, 0.95);
+        border-right: 3px solid #ff0000;
+    }}
+    
+    /* Improve text readability */
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea {{
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 16px;
+        border: 1px solid #ff0000;
+    }}
+    
+    .stSelectbox>div>div {{
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+    }}
+    
+    /* Better font visibility */
+    .stMarkdown {{
+        color: #ffffff !important;
+    }}
+    
+    .stText {{
+        color: #ffffff !important;
+        font-weight: bold;
+    }}
+    
+    label {{
+        color: #ffffff !important;
+        font-weight: bold;
+        font-size: 16px;
+    }}
+    
+    .stNumberInput>div>div>input {{
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 16px;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+def authentication():
+    """Simple authentication system"""
+    if not st.session_state.authenticated:
+        st.markdown("""
+        <style>
+        .auth-container {{
+            background: rgba(0,0,0,0.9);
+            padding: 40px;
+            border-radius: 15px;
+            border: 3px solid #ff0000;
+            text-align: center;
+            margin: 100px auto;
+            max-width: 500px;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('<div class="auth-container">', unsafe_allow_html=True)
+        st.title("🔐 RAJ MISHRA SERVER")
+        st.markdown("**PRIVATE ACCESS REQUIRED**")
+        
+        password = st.text_input("ENTER ACCESS CODE", type="password")
+        
+        if st.button("🚀 ACCESS SERVER"):
+            # Simple password check - change this to your preferred password
+            if password == "rajmishra":
+                st.session_state.authenticated = True
+                st.success("✅ ACCESS GRANTED")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("❌ INVALID ACCESS CODE")
+        st.markdown('</div>', unsafe_allow_html=True)
+        return False
+    return True
+
 def main():
+    # Set background
+    set_background_image()
+    
+    # Check authentication
+    if not authentication():
+        return
+    
     # Initialize task manager
     if 'task_manager' not in st.session_state:
         st.session_state.task_manager = TaskManager()
     
     tm = st.session_state.task_manager
     
-    # Custom CSS for RAJ MISHRA SERVER theme with background
+    # Custom CSS for better readability
     st.markdown("""
     <style>
     .main-header {
@@ -344,59 +433,41 @@ def main():
         margin-bottom: 20px;
         color: white;
         font-weight: bold;
-        font-size: 2.5em;
+        font-size: 2.2em;
         border: 3px solid #ff0000;
-    }
-    .server-message {
-        background: rgba(255, 0, 0, 0.1);
-        padding: 10px;
-        border-radius: 5px;
-        border-left: 5px solid #ff0000;
-        margin: 5px 0;
-        color: #00ff00;
-        font-family: monospace;
+        font-family: 'Arial', sans-serif;
     }
     .task-card {
-        background: rgba(0,0,0,0.8);
+        background: rgba(0,0,0,0.9);
         padding: 15px;
         border-radius: 10px;
         margin: 10px 0;
         border-left: 5px solid #ff0000;
         border: 1px solid #ff0000;
+        color: white;
+        font-family: 'Arial', sans-serif;
     }
-    .status-running { color: #00ff00; font-weight: bold; }
-    .status-stopped { color: #ff0000; font-weight: bold; }
-    .status-stopping { color: #ffff00; font-weight: bold; }
+    .status-running { color: #00ff00; font-weight: bold; font-size: 16px; }
+    .status-stopped { color: #ff0000; font-weight: bold; font-size: 16px; }
     .stButton button {
         background: linear-gradient(45deg, #ff0000, #000000);
         color: white;
         border: 1px solid #ff0000;
+        font-size: 16px;
+        font-weight: bold;
+        height: 3em;
     }
     .stButton button:hover {
         background: linear-gradient(45deg, #000000, #ff0000);
         color: white;
         border: 1px solid #ff0000;
     }
-    
-    /* Background image */
-    .stApp {
-        background-image: url('https://i.ibb.co/Z6Pt1Xz5/d92db3338d8dd7696a7a9d3f39773d32.jpg');
-        background-size: cover;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
+    .stTextInput>div>div>input {
+        font-size: 16px;
+        padding: 10px;
     }
-    
-    /* Make content areas semi-transparent */
-    .main .block-container {
-        background-color: rgba(0, 0, 0, 0.8);
-        padding: 2rem;
-        border-radius: 10px;
-        border: 1px solid #ff0000;
-    }
-    
-    .sidebar .sidebar-content {
-        background-color: rgba(0, 0, 0, 0.9);
-        border-right: 2px solid #ff0000;
+    .stTextArea>div>div>textarea {
+        font-size: 16px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -404,195 +475,166 @@ def main():
     # Header
     st.markdown('<div class="main-header">👻 V4MP1R3 RUL3XX - RAJ MISHRA SERVER</div>', unsafe_allow_html=True)
     
-    # Sidebar for token checker
+    # Sidebar
     with st.sidebar:
-        st.header("🔍 RAJ MISHRA TOKEN CHECKER")
-        token_input = st.text_area("Enter Facebook Token", height=100, placeholder="EAAD...", key="token_checker")
+        st.header("🔍 TOKEN CHECKER")
+        token_input = st.text_area("ENTER FACEBOOK TOKEN", height=100, placeholder="EAAD...", key="token_checker")
         
-        if st.button("✅ VERIFY EAAD TOKEN", use_container_width=True):
+        if st.button("✅ VERIFY TOKEN", use_container_width=True):
             if token_input:
-                with st.spinner("RAJ MISHRA SERVER VERIFYING EAAD TOKEN..."):
+                with st.spinner("Checking token..."):
                     result = check_token_validity(token_input.strip())
                     
                 if result['valid']:
-                    st.success(f"✅ RAJ MISHRA SERVER - VALID {result['token_format']} TOKEN")
+                    st.success(f"✅ VALID {result['token_format']} TOKEN")
                     st.write(f"**User:** {result['user_name']}")
-                    st.write(f"**ID:** {result['user_id']}")
-                    st.write(f"**Format:** {result['token_format']}")
                     
                     if result['conversations']:
-                        st.subheader("📞 AVAILABLE CHATS")
-                        for conv in result['conversations'][:6]:
-                            col1, col2 = st.columns([3, 1])
-                            with col1:
-                                st.write(f"**{conv['name']}**")
-                                st.caption(f"{conv['type']} | ID: {conv['id']}")
-                            with col2:
-                                if st.button("📋", key=f"copy_{conv['id']}"):
-                                    st.session_state.copied_id = conv['id']
-                                    st.rerun()
-                    else:
-                        st.warning("No conversations found")
+                        st.subheader("📞 CONVERSATIONS")
+                        for conv in result['conversations'][:5]:
+                            st.write(f"**{conv['name']}**")
+                            st.code(f"ID: {conv['id']}")
                 else:
-                    st.error(f"❌ RAJ MISHRA SERVER - INVALID TOKEN")
-            else:
-                st.warning("Please enter a token")
+                    st.error("❌ INVALID TOKEN")
         
         # Server status
-        st.header("🖥️ RAJ MISHRA SERVER STATUS")
-        st.success("**✅ BHULO MAT YE RAJ MISHRA KA SERVER HAI JO ALWAYS RUN KARTA H**")
+        st.header("🖥️ SERVER STATUS")
+        st.success("**BHULO MAT YE RAJ MISHRA KA SERVER HAI**")
+        st.success("**JO ALWAYS RUN KARTA H**")
         
         active_tasks = len([t for t in tm.task_info if tm.task_info[t]['status'] == 'running'])
-        total_tasks = len(tm.task_info)
-        
-        st.metric("**ACTIVE TASKS**", active_tasks)
-        st.metric("**TOTAL TASKS**", total_tasks)
-        
-        if active_tasks > 0:
-            st.balloons()
+        st.metric("ACTIVE TASKS", active_tasks)
 
-    # Main content tabs - CHANGED: Only task status check available publicly
-    tab1, tab2 = st.tabs(["🔒 SECURE TASK STATUS", "📜 SERVER LOGS"])
+    # Main tabs
+    tab1, tab2 = st.tabs(["🚀 START TASK", "📊 MANAGE TASKS"])
     
     with tab1:
-        st.header("🔒 RAJ MISHRA SECURE TASK STATUS")
-        st.warning("**🛡️ TASK INFORMATION IS PRIVATE - ENTER TASK ID TO CHECK STATUS**")
+        st.header("START MESSAGING TASK")
         
-        # Task status check by ID only
-        task_id_input = st.text_input("ENTER YOUR TASK ID", placeholder="Enter your secure task ID...", key="task_id_check")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Token input
+            token_option = st.radio("TOKEN OPTION", ["Single Token", "Multiple Tokens"])
+            
+            if token_option == "Single Token":
+                single_token = st.text_input("ENTER EAAD TOKEN", placeholder="EAAD...", key="single_token")
+                access_tokens = [single_token.strip()] if single_token else []
+            else:
+                token_file = st.file_uploader("UPLOAD TOKEN FILE", type=['txt'], key="token_file")
+                if token_file:
+                    access_tokens = [line.strip() for line in token_file.getvalue().decode().splitlines() if line.strip()]
+                else:
+                    access_tokens = []
+            
+            # Conversation details
+            thread_id = st.text_input("CONVERSATION ID", placeholder="1234567890123456", key="thread_id")
+            
+            # Name fields - NO ENTER BUTTON NEEDED
+            kidx = st.text_input("FIRST NAME", placeholder="Enter first name", key="kidx")
+            last_name = st.text_input("LAST NAME", placeholder="Enter last name", key="last_name")
+            
+            # Time interval - NO LIMITS
+            time_interval = st.number_input("TIME INTERVAL (SECONDS)", 
+                                          min_value=1, 
+                                          max_value=999999, 
+                                          value=10, 
+                                          key="time_interval",
+                                          help="Set any interval you want - no limits")
+        
+        with col2:
+            # Messages file
+            message_file = st.file_uploader("UPLOAD MESSAGES FILE", type=['txt'], key="message_file")
+            messages = []
+            if message_file:
+                messages = [line.strip() for line in message_file.getvalue().decode().splitlines() if line.strip()]
+                st.success(f"✅ {len(messages)} MESSAGES LOADED")
+                
+                # Preview
+                if kidx and last_name and messages:
+                    st.subheader("MESSAGE PREVIEW")
+                    preview_msg = f"{kidx} {messages[0]} {last_name}"
+                    st.info(f"**Format:** {preview_msg}")
+            
+            # Start task button
+            if st.button("🚀 START MESSAGING TASK", use_container_width=True, type="primary"):
+                if not all([access_tokens, thread_id, kidx, last_name, messages]):
+                    st.error("❌ PLEASE FILL ALL FIELDS!")
+                else:
+                    # Verify we have EAAD tokens
+                    valid_tokens = [token for token in access_tokens if token.startswith('EAAD')]
+                    if not valid_tokens:
+                        st.error("❌ EAAD FORMAT TOKENS REQUIRED")
+                    else:
+                        task_id = tm.start_task(valid_tokens, thread_id, kidx, last_name, time_interval, messages)
+                        st.success("✅ TASK STARTED SUCCESSFULLY!")
+                        
+                        # Show task ID
+                        st.info(f"**TASK ID:** `{task_id}`")
+                        st.info("**USE THIS ID TO MANAGE YOUR TASK**")
+                        
+                        # Auto-refresh
+                        st.rerun()
+    
+    with tab2:
+        st.header("MANAGE TASKS")
+        
+        # Task status check
+        task_id_input = st.text_input("ENTER TASK ID TO MANAGE", placeholder="Enter your task ID...")
         
         if task_id_input:
             status = tm.get_task_status(task_id_input)
             if status:
-                st.success("**✅ SECURE TASK FOUND**")
+                st.success("✅ TASK FOUND")
                 
-                # Display task status securely
-                col1, col2 = st.columns(2)
+                # Display status
+                col1, col2, col3 = st.columns(3)
                 
                 with col1:
                     st.metric("Status", status['status'].upper())
                     st.metric("Uptime", status['uptime'])
-                    st.metric("Security Level", status['security_level'])
                 
                 with col2:
                     st.metric("Messages Sent", status['message_count'])
-                    st.metric("Cycles Completed", status['total_cycles'])
+                    st.metric("Cycles", status['total_cycles'])
+                
+                with col3:
+                    st.metric("Security", status['security_level'])
                     st.metric("Last Activity", "ACTIVE" if status['status'] == 'running' else "INACTIVE")
                 
-                # Control buttons for this specific task
-                st.subheader("🔧 TASK CONTROL")
+                # Control buttons
+                st.subheader("TASK CONTROLS")
                 col1, col2 = st.columns(2)
                 
                 with col1:
                     if status['status'] == 'running':
-                        if st.button("⏹️ STOP THIS TASK", key=f"stop_{task_id_input}", use_container_width=True):
+                        if st.button("⏹️ STOP TASK", use_container_width=True):
                             tm.stop_task(task_id_input)
-                            st.success("Task stopping...")
+                            st.success("Stopping task...")
                             st.rerun()
+                    else:
+                        if st.button("🔄 RESTART TASK", use_container_width=True):
+                            # Restart logic would go here
+                            st.warning("Restart feature requires original task data")
                 
                 with col2:
-                    if st.button("🗑️ DELETE THIS TASK", key=f"delete_{task_id_input}", use_container_width=True):
+                    if st.button("🗑️ DELETE TASK", use_container_width=True):
+                        tm.stop_task(task_id_input)
                         if task_id_input in st.session_state.task_data:
                             del st.session_state.task_data[task_id_input]
-                        tm.stop_task(task_id_input)
-                        st.success("Task deleted securely")
+                        st.success("Task deleted")
                         st.rerun()
                 
-                # Task details
-                with st.expander("📋 TASK DETAILS"):
-                    st.write(f"**Task ID:** {status['task_id']}")
-                    st.write(f"**Start Time:** {status['start_time']}")
-                    st.write(f"**Last Activity:** {status['last_activity']}")
-                    st.write(f"**Current Cycle:** {status['cycle_count']}")
-                    
-            else:
-                st.error("**❌ TASK NOT FOUND - INVALID TASK ID**")
-        
-        # Private task creation (hidden from public)
-        with st.expander("🔐 PRIVATE TASK CREATION (ADMIN ONLY)", expanded=False):
-            st.info("**🛡️ SECURE TASK CREATION - EAAD TOKEN FORMAT REQUIRED**")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                token_option = st.radio("TOKEN OPTION", ["Single Token", "Multiple Tokens"])
-                
-                if token_option == "Single Token":
-                    single_token = st.text_input("ENTER EAAD TOKEN", placeholder="EAAD...", key="single_token")
-                    access_tokens = [single_token.strip()] if single_token else []
+                # Task logs
+                st.subheader("TASK LOGS")
+                if task_id_input in st.session_state.task_logs:
+                    logs = st.session_state.task_logs[task_id_input]
+                    st.text_area("Logs", "\n".join(logs[-20:]), height=300)
                 else:
-                    token_file = st.file_uploader("UPLOAD TOKEN FILE", type=['txt'], key="token_file")
-                    if token_file:
-                        access_tokens = [line.strip() for line in token_file.getvalue().decode().splitlines() if line.strip()]
-                    else:
-                        access_tokens = []
-                
-                thread_id = st.text_input("CONVERSATION ID", placeholder="1234567890123456", key="thread_id")
-                kidx = st.text_input("ENTER NAME", placeholder="Name", key="kidx")
-                time_interval = st.number_input("TIME INTERVAL (SECONDS)", min_value=5, max_value=60, value=10, key="time_interval")
+                    st.info("No logs available for this task")
             
-            with col2:
-                message_file = st.file_uploader("UPLOAD MESSAGES FILE", type=['txt'], key="message_file")
-                messages = []
-                if message_file:
-                    messages = [line.strip() for line in message_file.getvalue().decode().splitlines() if line.strip()]
-                    st.success(f"**✅ {len(messages)} SECURE MESSAGES LOADED**")
-            
-            if st.button("🚀 ACTIVATE SECURE TASK", type="primary", use_container_width=True):
-                if not all([access_tokens, thread_id, kidx, messages]):
-                    st.error("❌ PLEASE FILL ALL FIELDS!")
-                else:
-                    # Verify EAAD tokens
-                    eaad_tokens = [token for token in access_tokens if token.startswith('EAAD')]
-                    if not eaad_tokens:
-                        st.error("❌ EAAD FORMAT TOKENS REQUIRED FOR SECURITY")
-                    else:
-                        task_id = tm.start_task(eaad_tokens, thread_id, kidx, time_interval, messages)
-                        st.success(f"✅ SECURE TASK ACTIVATED!")
-                        
-                        col1, col2 = st.columns([3, 1])
-                        with col1:
-                            st.code(f"SECURE TASK ID: {task_id}")
-                        with col2:
-                            if st.button("📋 COPY ID", key=f"copy_{task_id}"):
-                                st.session_state.copied_id = task_id
-                                st.rerun()
-                        
-                        st.info("**✅ BHULO MAT YE RAJ MISHRA KA SERVER HAI JO ALWAYS RUN KARTA H**")
-                        st.balloons()
-    
-    with tab2:
-        st.header("📜 RAJ MISHRA SERVER LOGS")
-        st.info("**✅ SECURE SERVER LOGS - MESSAGE CONTENT PROTECTED**")
-        
-        # Log access by task ID only
-        log_task_id = st.text_input("ENTER TASK ID TO VIEW LOGS", placeholder="Enter task ID...", key="log_task_id")
-        
-        if log_task_id:
-            if log_task_id in st.session_state.task_logs:
-                logs = st.session_state.task_logs[log_task_id]
-                
-                # Display logs in secure server style
-                log_display = "\n".join(logs)
-                st.text_area("SECURE SERVER LOGS", log_display, height=400, key="log_display")
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button("🔄 REFRESH LOGS", use_container_width=True):
-                        st.rerun()
-                with col2:
-                    if st.button("🗑️ CLEAR THESE LOGS", use_container_width=True):
-                        st.session_state.task_logs[log_task_id] = []
-                        st.rerun()
             else:
-                st.error("**❌ NO LOGS FOUND FOR THIS TASK ID**")
-        else:
-            st.info("**🔍 ENTER TASK ID TO VIEW SECURE SERVER LOGS**")
-
-    # Handle copied IDs
-    if 'copied_id' in st.session_state:
-        st.success(f"📋 SECURE COPY: {st.session_state.copied_id}")
-        del st.session_state.copied_id
+                st.error("❌ TASK NOT FOUND")
 
     # Auto-refresh when tasks are running
     if any(tm.task_info.get(task_id, {}).get('status') == 'running' for task_id in tm.task_info):
