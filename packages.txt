@@ -1,3 +1,0 @@
-python3-pip
-chromedriver
-google-chrome-stable
