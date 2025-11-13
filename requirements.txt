@@ -1,5 +1,9 @@
-streamlit
-requests
-pandas
-pytz
-selenium
+Flask==2.3.3
+selenium==4.15.0
+requests==2.31.0
+urllib3==1.26.18
+Werkzeug==2.3.7
+Jinja2==3.1.2
+itsdangerous==2.1.2
+click==8.1.7
+blinker==1.6.3
