@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Facebook Messenger Automation Bot - FINAL RELIABILITY VERSION (FIXED)
+Facebook Messenger Automation Bot - E2EE CHAT FIXED VERSION
 """
 
 import streamlit as st
@@ -15,13 +15,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, TimeoutException
 
 # ============================================
 # GLOBAL CONFIGURATION (Streamlit Paths)
 # ============================================
 LOG_QUEUE = queue.Queue()
-RERUN_QUEUE = queue.Queue()  # 🆕 NEW: Thread-safe rerun requests
+RERUN_QUEUE = queue.Queue()
 CHROME_PATH = "/usr/bin/google-chrome"
 CHROMEDRIVER_PATH = "/usr/bin/chromedriver" 
 
@@ -34,7 +36,16 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ... (CSS STYLING - Keep your original CSS here) ...
+# CSS STYLING
+st.markdown("""
+<style>
+    .status-running { color: green; font-weight: bold; font-size: 18px; }
+    .status-stopped { color: red; font-weight: bold; font-size: 18px; }
+    .config-section { background-color: #f0f2f6; padding: 20px; border-radius: 10px; margin: 10px 0; }
+    .log-container { background-color: black; color: white; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    .log-entry { margin: 5px 0; padding: 5px; border-left: 3px solid #4CAF50; }
+</style>
+""", unsafe_allow_html=True)
 
 # ============================================
 # SESSION STATE INITIALIZATION
@@ -49,14 +60,13 @@ def init_session_state():
         st.session_state.stop_requested = False
     if 'automation_thread' not in st.session_state:
         st.session_state.automation_thread = None
-    if 'last_rerun' not in st.session_state:  # 🆕 NEW
+    if 'last_rerun' not in st.session_state:
         st.session_state.last_rerun = 0
 
-# Initialize session state at startup
 init_session_state()
 
 # ============================================
-# HELPER FUNCTIONS (Updated)
+# HELPER FUNCTIONS
 # ============================================
 
 def add_log(message):
@@ -65,11 +75,11 @@ def add_log(message):
     log_entry = f"[{timestamp}] AUTO-1: {message}"
     LOG_QUEUE.put(log_entry)
 
-def request_rerun():  # 🆕 NEW FUNCTION
+def request_rerun():
     """Thread-safe rerun request"""
     RERUN_QUEUE.put(True)
 
-def process_queues():  # 🆕 NEW FUNCTION
+def process_queues():
     """Update session state from queues."""
     has_updates = False
     
@@ -82,13 +92,13 @@ def process_queues():  # 🆕 NEW FUNCTION
         except queue.Empty:
             break
     
-    # Process rerun requests (limit frequency)
+    # Process rerun requests
     current_time = time.time()
     if not RERUN_QUEUE.empty() and (current_time - st.session_state.last_rerun) > 1:
         try:
             RERUN_QUEUE.get_nowait()
             st.session_state.last_rerun = current_time
-            return True  # Signal that rerun is needed
+            return True
         except queue.Empty:
             pass
     
@@ -97,9 +107,8 @@ def process_queues():  # 🆕 NEW FUNCTION
         
     return has_updates
 
-# setup_chrome_driver: Relying on external packages.txt for installation
 def setup_chrome_driver():
-    """Setup Chrome driver using hardcoded paths for Streamlit Cloud."""
+    """Setup Chrome driver for Streamlit Cloud."""
     try:
         chrome_options = Options()
         
@@ -112,36 +121,33 @@ def setup_chrome_driver():
         chrome_options.add_argument('--window-size=1920,1080')
         chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
         
-        # Check if binaries exist (relying on packages.txt to install them)
+        # Check if binaries exist
         if os.path.exists(CHROME_PATH):
             chrome_options.binary_location = CHROME_PATH
         else:
-             add_log(f"❌ CRITICAL: Chrome binary not found at {CHROME_PATH}.")
-             return None
+            add_log(f"❌ CRITICAL: Chrome binary not found at {CHROME_PATH}.")
+            return None
 
         if not os.path.exists(CHROMEDRIVER_PATH):
-             add_log(f"❌ CRITICAL: ChromeDriver not found at {CHROMEDRIVER_PATH}.")
-             return None
+            add_log(f"❌ CRITICAL: ChromeDriver not found at {CHROMEDRIVER_PATH}.")
+            return None
         
-        # Use Service directly without webdriver_manager
         service = Service(executable_path=CHROMEDRIVER_PATH)
-        
         driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
-        add_log("✅ ChromeDriver setup completed and browser launched!")
+        add_log("✅ ChromeDriver setup completed!")
         return driver
         
     except WebDriverException as e:
-        add_log(f"❌ WebDriver Exception: Check `packages.txt` for dependencies. Error: {str(e)[:100]}")
+        add_log(f"❌ WebDriver Exception: {str(e)[:100]}")
         return None
     except Exception as e:
-        add_log(f"❌ General ChromeDriver setup failed: {str(e)[:100]}")
+        add_log(f"❌ ChromeDriver setup failed: {str(e)[:100]}")
         return None
 
-
 def parse_cookies(cookie_string):
-    """Parse cookies from various formats (Same as your original logic)"""
+    """Parse cookies from various formats"""
     cookies = []
     try:
         # Try JSON format first
@@ -174,30 +180,75 @@ def parse_cookies(cookie_string):
         add_log(f"❌ Cookie parsing error: {str(e)}")
         return []
 
+def wait_for_messenger_load(driver, timeout=30):
+    """Wait for Messenger to fully load"""
+    add_log("⏳ Waiting for Messenger to load...")
+    start_time = time.time()
+    
+    while time.time() - start_time < timeout:
+        if st.session_state.stop_requested:
+            return False
+            
+        try:
+            # Check if we're still on login page
+            if "login" in driver.current_url.lower() or "checkpoint" in driver.current_url.lower():
+                add_log("❌ Still on login/checkpoint page")
+                return False
+            
+            # Try to find message input or conversation area
+            input_selectors = [
+                'div[contenteditable="true"][role="textbox"]',
+                'div[aria-label="Message" i][contenteditable="true"]',
+                'div[role="textbox"]',
+                '[data-testid="mwthreadlist-item"]',
+                '.notranslate'
+            ]
+            
+            for selector in input_selectors:
+                try:
+                    element = driver.find_element(By.CSS_SELECTOR, selector)
+                    if element.is_displayed():
+                        add_log("✅ Messenger loaded successfully!")
+                        return True
+                except:
+                    continue
+                    
+            time.sleep(2)
+            
+        except Exception as e:
+            add_log(f"⚠️ Waiting for load: {str(e)[:50]}")
+            time.sleep(2)
+    
+    add_log("❌ Timeout waiting for Messenger to load")
+    return False
+
 # ============================================
-# AUTOMATION FUNCTION (Runs in background thread)
+# AUTOMATION FUNCTION (E2EE CHAT FIXED)
 # ============================================
 
 def run_automation(cookies_str, messages, thread_id, delay):
     """
-    Main automation function with robust messaging logic.
+    Main automation function for E2EE chats
     """
     is_stop_requested = False
     driver = None
     
     try:
-        add_log("🚀 Starting automation...")
-        if st.session_state.stop_requested: return
+        add_log("🚀 Starting E2EE chat automation...")
+        if st.session_state.stop_requested: 
+            return
         
         driver = setup_chrome_driver()
         if not driver:
-            add_log("❌ Browser setup failed. Automation stopping.")
+            add_log("❌ Browser setup failed.")
             return
             
-        add_log("🌐 Navigating and setting cookies...")
+        # STEP 1: Navigate to Facebook first
+        add_log("🌐 Navigating to Facebook...")
         driver.get("https://www.facebook.com")
         time.sleep(3)
         
+        # STEP 2: Add cookies
         cookies = parse_cookies(cookies_str)
         if not cookies:
             add_log("❌ Failed to parse cookies")
@@ -206,7 +257,6 @@ def run_automation(cookies_str, messages, thread_id, delay):
         add_log(f"🍪 Adding {len(cookies)} cookies...")
         for cookie in cookies:
             try:
-                # Use a cleaner dictionary for add_cookie
                 driver.add_cookie({
                     'name': cookie['name'],
                     'value': cookie['value'],
@@ -214,29 +264,48 @@ def run_automation(cookies_str, messages, thread_id, delay):
                     'path': cookie.get('path', '/')
                 })
             except Exception as e:
-                add_log(f"⚠️ Cookie failed: {cookie.get('name', 'unknown')}. Error: {str(e)[:50]}")
+                add_log(f"⚠️ Cookie failed: {cookie.get('name', 'unknown')}")
         
-        # 🆕 CHANGED: Use E2EE Messenger URL format
+        # STEP 3: Refresh to apply cookies
+        add_log("🔄 Refreshing page with cookies...")
+        driver.refresh()
+        time.sleep(5)
+        
+        # STEP 4: Check if logged in successfully
+        if "login" in driver.current_url.lower():
+            add_log("❌ Still on login page - cookies may be invalid")
+            return
+        
+        add_log("✅ Successfully logged in with cookies!")
+        
+        # STEP 5: Navigate directly to E2EE conversation
         thread_url = f"https://www.facebook.com/messages/e2ee/t/{thread_id}"
         add_log(f"💬 Opening E2EE conversation: {thread_id}")
         driver.get(thread_url)
-        time.sleep(7) # Increased wait time for Messenger to load
         
-        if "login" in driver.current_url.lower() or "checkpoint" in driver.current_url.lower():
-            add_log("❌ Login/Checkpoint page detected! Cookies are invalid or expired.")
+        # STEP 6: Wait for Messenger to load
+        if not wait_for_messenger_load(driver):
+            add_log("❌ Failed to load Messenger conversation")
             return
         
-        # Process messages
+        # STEP 7: Process messages
         message_list = [msg.strip() for msg in messages.split('\n') if msg.strip()]
         add_log(f"📝 Messages to send: {len(message_list)}")
         
-        # 🚨 FINAL RELIABLE SELECTORS (Priority based on latest FB structure)
+        # E2EE CHAT SPECIFIC SELECTORS
         INPUT_SELECTORS = [
             'div[contenteditable="true"][role="textbox"]',
             'div[aria-label="Message" i][contenteditable="true"]',
-            'div[role="textbox"]',
+            'div[contenteditable="true"]',
+            '[contenteditable="true"]',
+            '.notranslate'
         ]
-        SEND_BUTTON_SELECTOR = 'div[role="button"][aria-label="Send"]'
+        
+        SEND_BUTTON_SELECTORS = [
+            'div[role="button"][aria-label="Send"]',
+            '[aria-label="Send"]',
+            '[data-testid="send-button"]'
+        ]
         
         for idx, message in enumerate(message_list, 1):
             if st.session_state.stop_requested:
@@ -245,53 +314,95 @@ def run_automation(cookies_str, messages, thread_id, delay):
                 break
             
             try:
-                add_log(f"🎯 Message {idx}/{len(message_list)}. Finding input...")
+                add_log(f"🎯 Sending message {idx}/{len(message_list)}...")
                 
-                # 1. Find message input using the list of selectors
+                # Find message input with retry logic
                 message_input = None
-                for selector in INPUT_SELECTORS:
-                    try:
-                        message_input = driver.find_element(By.CSS_SELECTOR, selector)
-                        if message_input:
-                            add_log(f"✅ Found input with selector: {selector[:20]}...")
-                            break
-                    except NoSuchElementException:
-                        continue
+                for attempt in range(3):
+                    if st.session_state.stop_requested:
+                        break
+                        
+                    for selector in INPUT_SELECTORS:
+                        try:
+                            elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                            for element in elements:
+                                if element.is_displayed() and element.is_enabled():
+                                    message_input = element
+                                    add_log(f"✅ Found input with: {selector}")
+                                    break
+                            if message_input:
+                                break
+                        except:
+                            continue
+                    
+                    if message_input:
+                        break
+                    else:
+                        add_log(f"🔄 Retry {attempt + 1} finding input...")
+                        time.sleep(2)
                 
                 if not message_input:
-                    add_log("❌ Message input not found after all attempts. Skipping.")
+                    add_log("❌ Message input not found")
                     continue
                 
-                # 2. Type and Click
+                # Clear and type message
                 message_input.click()
-                time.sleep(0.5)
-                # Clear content using JS for robustness
-                driver.execute_script("arguments[0].textContent = '';", message_input)
-                message_input.send_keys(message)
                 time.sleep(1)
                 
-                # 3. CRITICAL: Try Send Button first, then fallback to RETURN
+                # Clear using multiple methods
                 try:
-                    send_button = driver.find_element(By.CSS_SELECTOR, SEND_BUTTON_SELECTOR)
-                    send_button.click()
-                    add_log("📤 Send button clicked.")
-                except NoSuchElementException:
-                    add_log("⚠️ Send button not found. Using RETURN key fallback.")
-                    message_input.send_keys(Keys.RETURN)
+                    driver.execute_script("arguments[0].textContent = '';", message_input)
+                except:
+                    try:
+                        message_input.clear()
+                    except:
+                        pass
                 
-                add_log(f"✅ Message {idx} sent!")
+                message_input.send_keys(message)
+                add_log(f"📝 Typed message: {message[:30]}...")
+                time.sleep(1)
+                
+                # Send message
+                send_success = False
+                
+                # Method 1: Try send button
+                for selector in SEND_BUTTON_SELECTORS:
+                    try:
+                        send_button = driver.find_element(By.CSS_SELECTOR, selector)
+                        if send_button.is_displayed() and send_button.is_enabled():
+                            send_button.click()
+                            add_log("📤 Send button clicked")
+                            send_success = True
+                            break
+                    except:
+                        continue
+                
+                # Method 2: Fallback to Enter key
+                if not send_success:
+                    try:
+                        message_input.send_keys(Keys.RETURN)
+                        add_log("📤 Sent using Enter key")
+                        send_success = True
+                    except:
+                        add_log("❌ Failed to send message")
+                
+                if send_success:
+                    add_log(f"✅ Message {idx} sent successfully!")
+                else:
+                    add_log(f"❌ Message {idx} failed to send")
+                
                 time.sleep(delay)
                 
             except Exception as e:
-                add_log(f"❌ Error during message send loop: {str(e)[:100]}")
+                add_log(f"❌ Error sending message {idx}: {str(e)[:100]}")
                 time.sleep(2)
                 continue
         
         if not is_stop_requested:
-            add_log("🎉 Automation completed!")
+            add_log("🎉 Automation completed successfully!")
         
     except Exception as e:
-        add_log(f"❌ Critical error during run: {str(e)[:100]}")
+        add_log(f"❌ Critical error: {str(e)[:100]}")
     
     finally:
         if driver:
@@ -301,10 +412,10 @@ def run_automation(cookies_str, messages, thread_id, delay):
             except:
                 pass
         
-        add_log("---THREAD_FINISHED---")  # 🆕 CHANGED: Direct log instead of queue put
+        add_log("---THREAD_FINISHED---")
 
 # ============================================
-# MAIN UI (Updated RERUN)
+# MAIN UI
 # ============================================
 
 def start_automation_thread(cookies, messages, thread_id, delay):
@@ -318,21 +429,18 @@ def start_automation_thread(cookies, messages, thread_id, delay):
     thread = threading.Thread(target=wrapper, daemon=True)
     thread.start()
     st.session_state.automation_thread = thread
-    
-    # 🆕 CHANGED: Use thread-safe rerun instead of direct st.rerun()
     request_rerun()
 
 def main():
     
-    rerun_needed = process_queues()  # 🆕 CHANGED: Use new queue processor
+    rerun_needed = process_queues()
     
     if st.session_state.logs and st.session_state.logs[-1] == "---THREAD_FINISHED---":
         st.session_state.logs.pop() 
         st.session_state.is_running = False 
-        rerun_needed = True  # 🆕 CHANGED: Set flag instead of direct rerun
+        rerun_needed = True
         
-    
-    st.title("🤖 Facebook Messenger Automation Bot")
+    st.title("🤖 Facebook Messenger Automation Bot (E2EE Chat)")
     
     # Status display
     col1, col2 = st.columns(2)
@@ -346,28 +454,29 @@ def main():
         if st.session_state.is_running:
             if st.button("⏹️ Stop Bot", key="stop_btn"):
                 st.session_state.stop_requested = True
-                add_log("🛑 Stop requested")  # 🆕 CHANGED: Use add_log instead of direct append
-                rerun_needed = True  # 🆕 CHANGED: Set flag instead of direct rerun
+                add_log("🛑 Stop requested")
+                rerun_needed = True
     
     # Configuration
     st.markdown('<div class="config-section">', unsafe_allow_html=True)
-    st.subheader("⚙️ Configuration")
+    st.subheader("⚙️ E2EE Chat Configuration")
     
     col1, col2 = st.columns(2)
     
     with col1:
         thread_id = st.text_input(
-            "💬 Thread ID", 
+            "💬 E2EE Thread ID", 
             placeholder="7936294139832001",
-            help="Find in E2EE URL: /messages/e2ee/t/[THREAD_ID]",
+            help="Copy from E2EE URL: /messages/e2ee/t/[THREAD_ID]",
             key="thread_id" 
         )
         
         delay = st.number_input(
-            "⏰ Delay (seconds)", 
-            min_value=1, 
+            "⏰ Delay between messages (seconds)", 
+            min_value=2, 
             max_value=60, 
-            value=3,
+            value=5,
+            help="Minimum 2 seconds recommended for E2EE chats",
             key="delay" 
         )
     
@@ -375,16 +484,16 @@ def main():
         messages = st.text_area(
             "📝 Messages (one per line)",
             height=150,
-            placeholder="Hello!\nHow are you?\nAutomated message",
+            placeholder="Hello!\nThis is an automated message\nFrom E2EE chat bot",
             key="messages_input"
         )
     
-    # Cookies (full width)
+    # Cookies
     cookies = st.text_area(
-        "🍪 Facebook Cookies (All Formats Supported)", 
-        height=100,
-        placeholder="JSON: [{\"name\":\"c_user\",\"value\":\"123\",...}]\nSemicolon: c_user=123; xs=abc\nNewline: one per line",
-        help="Supports: JSON, semicolon-delimited, newline-separated",
+        "🍪 Facebook Cookies (CRITICAL FOR E2EE)", 
+        height=120,
+        placeholder="Paste cookies in any format:\n- JSON: [{\"name\":\"c_user\",\"value\":\"123\"...}]\n- Semicolon: c_user=123; xs=abc\n- Newline separated",
+        help="Make sure cookies include c_user, xs, and other authentication cookies",
         key="cookies_input" 
     )
     
@@ -392,22 +501,21 @@ def main():
     
     # Start button
     if not st.session_state.is_running:
-        if st.button("🚀 Start Automation", key="start_btn"):
+        if st.button("🚀 Start E2EE Automation", type="primary", key="start_btn"):
             if not thread_id:
-                st.error("❌ Enter Thread ID")
+                st.error("❌ Enter E2EE Thread ID")
             elif not messages.strip():
                 st.error("❌ Enter Messages")
             elif not cookies.strip():
                 st.error("❌ Enter Cookies")
             else:
-                add_log("🎬 Starting...")  # 🆕 CHANGED: Use add_log instead of direct append
+                add_log("🎬 Starting E2EE automation...")
                 start_automation_thread(cookies, messages, thread_id, delay)
-                rerun_needed = True  # 🆕 CHANGED: Set flag instead of direct rerun
+                rerun_needed = True
     
     # Logs
     st.subheader("📊 Live Logs")
     
-    # 🆕 CHANGED: Smart rerun logic
     if st.session_state.is_running:
         if rerun_needed or (time.time() - st.session_state.last_rerun) > 2:
             request_rerun()
@@ -419,44 +527,48 @@ def main():
         log_html += '</div>'
         st.markdown(log_html, unsafe_allow_html=True)
     else:
-        st.info("📝 Logs will appear here...")
+        st.info("📝 Logs will appear here when automation starts...")
     
     # Clear logs
-    if st.session_state.logs:
+    if st.session_state.logs and not st.session_state.is_running:
         if st.button("🗑️ Clear Logs"):
             st.session_state.logs = []
-            rerun_needed = True  # 🆕 CHANGED: Set flag instead of direct rerun
+            rerun_needed = True
     
-    # Instructions (Updated for E2EE URL)
-    with st.expander("📖 Instructions"):
+    # Enhanced Instructions for E2EE
+    with st.expander("📖 E2EE Chat Instructions"):
         st.markdown("""
-        ### How to Use:
+        ### 🛡️ E2EE Chat Specific Instructions:
         
-        1. **Get Cookies:**
-           - Login to Facebook
-           - F12 > Application > Cookies > facebook.com
-           - Copy all cookies (especially `c_user` and `xs`)
+        1. **Get Fresh Cookies:**
+           - Login to Facebook in Chrome/Firefox
+           - Open Developer Tools (F12)
+           - Go to Application/Storage > Cookies > https://www.facebook.com
+           - Copy ALL cookies (especially: `c_user`, `xs`, `fr`, `datr`)
         
-        2. **Find Thread ID:**
-           - Open Messenger conversation
-           - Copy ID from E2EE URL: `/messages/e2ee/t/[ID]`
+        2. **Find E2EE Thread ID:**
+           - Open the secret conversation in Messenger
+           - Copy from URL: `https://www.facebook.com/messages/e2ee/t/[THIS_IS_THREAD_ID]`
         
-        3. **Configure:**
-           - Paste cookies (any format)
-           - Enter messages (one per line)
-           - Set delay (3-5 sec recommended)
+        3. **Important Notes for E2EE:**
+           - Cookies must be very fresh (less than 1 hour old)
+           - Use longer delays (5+ seconds) between messages
+           - E2EE chats load slower, be patient
+           - If failed, refresh cookies and try again
         
-        4. **Start:**
-           - Click "Start Automation"
-           - Monitor logs closely.
+        ### 🔧 Troubleshooting:
         
-        ### Note:
-        If messages still fail, check the logs for:
-        - **"❌ Login page detected!"**: Cookies are bad.
-        - **"❌ Message input not found"**: Facebook's layout changed.
+        **If messages don't send:**
+        - Cookies expired → Get fresh cookies
+        - Page didn't load → Increase wait time
+        - Element not found → Facebook updated UI
+        
+        **Common Error Messages:**
+        - "Still on login page" → Cookies invalid
+        - "Message input not found" → Page not loaded properly
+        - "Timeout waiting" → Slow internet/Facebook loading
         """)
     
-    # 🆕 CHANGED: Final rerun decision
     if rerun_needed:
         st.rerun()
 
