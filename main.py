@@ -2,13 +2,13 @@
 """
 Facebook Messenger Bot - PRINCE E2EE STYLE 💯✅
 FULLY WORKING VERSION - EXACT SAME AS PRINCE'S WORKING CODE
-(with fixes for Streamlit Cloud compatibility & delay input)
 """
 
 import streamlit as st
 import json
 import time
 import os
+import subprocess
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -17,11 +17,17 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager  # Manages driver automatically
+# New import for automatic driver management
+from webdriver_manager.chrome import ChromeDriverManager 
 
 # ============================================
-# GLOBAL CONFIGURATION - REMOVED HARD-CODED PATHS FOR STREAMLIT CLOUD
+# GLOBAL CONFIGURATION - PRINCE STYLE
+# NOTE: Hardcoded paths are removed and replaced 
+# with automatic driver management for portability.
 # ============================================
+# CHROME_PATH = "/usr/bin/chromium"
+# CHROMEDRIVER_PATH = "/usr/bin/chromedriver"
+
 
 # ============================================
 # PAGE CONFIGURATION - PRINCE STYLE
@@ -32,7 +38,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS STYLING - PRINCE STYLE (unchanged)
+# CSS STYLING - PRINCE STYLE
 st.markdown("""
 <style>
     .main-header { 
@@ -100,7 +106,7 @@ def init_session_state():
 init_session_state()
 
 # ============================================
-# PRINCE STYLE FUNCTIONS - FULLY WORKING WITH FIXES
+# PRINCE STYLE FUNCTIONS - FULLY WORKING
 # ============================================
 
 def add_log(message, log_type="info"):
@@ -123,12 +129,13 @@ def add_log(message, log_type="info"):
         st.session_state.logs = st.session_state.logs[-100:]
 
 def setup_browser_prince_style():
-    """Prince's browser setup fixed for Streamlit Cloud using webdriver-manager"""
+    """Uses webdriver-manager for automatic ChromeDriver setup"""
     try:
         add_log("Setting up Chrome browser...")
         
         chrome_options = Options()
-        chrome_options.add_argument('--headless=new')
+        # Ensure 'new' is used for modern headless mode
+        chrome_options.add_argument('--headless=new') 
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
@@ -137,21 +144,25 @@ def setup_browser_prince_style():
         chrome_options.add_argument('--disable-blink-features=AutomationControlled')
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
-
-        # Do NOT set binary_location - Streamlit Cloud default image should have Chrome
         
-        service = Service(ChromeDriverManager().install())  # auto-download driver
+        # --- FIX: Use ChromeDriverManager for automatic path finding ---
+        add_log("Automatically downloading/managing ChromeDriver...")
+        driver_path = ChromeDriverManager().install()
+        service = Service(executable_path=driver_path)
+        # -----------------------------------------------------------------
+        
         driver = webdriver.Chrome(service=service, options=chrome_options)
         
-        # Remove webdriver property
+        # Execute script to remove webdriver property
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
-        add_log("Chrome started with webdriver-manager!", "success")
+        add_log("Chrome started with managed ChromeDriver!", "success")
         add_log("Chrome browser setup completed successfully!", "success")
         return driver
         
     except Exception as e:
         add_log(f"Browser setup failed: {str(e)}", "error")
+        add_log("Ensure you have **Google Chrome** or **Chromium** installed on your system.", "error")
         return None
 
 def find_message_input_prince_style(driver):
@@ -160,6 +171,7 @@ def find_message_input_prince_style(driver):
     add_log(f"Page Title: {driver.title}")
     add_log(f"Page URL: {driver.current_url}")
     
+    # PRINCE'S 12 SELECTORS (exact same working selectors)
     SELECTORS = [
         'div[contenteditable="true"][role="textbox"]',
         'div[aria-label="Message"][contenteditable="true"]',
@@ -187,6 +199,7 @@ def find_message_input_prince_style(driver):
                     if element.is_displayed() and element.is_enabled():
                         add_log(f"Found editable element with selector #{i}", "success")
                         
+                        # Get text like Prince
                         try:
                             text = element.text or element.get_attribute('aria-label') or element.get_attribute('placeholder') or 'message'
                             add_log(f"Found message input with text: {text}", "success")
@@ -213,6 +226,7 @@ def send_message_prince_style(driver, message):
             add_log("No input field found", "error")
             return False
         
+        # Click and focus - Prince's method
         try:
             driver.execute_script("arguments[0].click();", input_field)
             add_log("Clicked input field via JavaScript")
@@ -226,6 +240,7 @@ def send_message_prince_style(driver, message):
                 add_log(f"Click failed: {str(e)}", "error")
                 return False
         
+        # Clear input - Prince's method
         try:
             driver.execute_script("arguments[0].textContent = '';", input_field)
             add_log("Cleared input field")
@@ -233,6 +248,7 @@ def send_message_prince_style(driver, message):
         except Exception as e:
             add_log(f"Clear failed: {str(e)}", "warning")
         
+        # Type message - Prince's method
         try:
             input_field.send_keys(message)
             add_log("Typed message into input field")
@@ -241,6 +257,7 @@ def send_message_prince_style(driver, message):
             add_log(f"Typing failed: {str(e)}", "error")
             return False
         
+        # Find send button (Prince's working method)
         send_selectors = [
             'div[role="button"][aria-label="Send"]',
             'div[aria-label="Send"]',
@@ -270,6 +287,7 @@ def send_message_prince_style(driver, message):
                 add_log(f"Send selector {selector} failed: {str(e)}")
                 continue
         
+        # Alternative: Press Enter key
         try:
             add_log("Trying Enter key as alternative...")
             input_field.send_keys(Keys.ENTER)
@@ -297,7 +315,7 @@ def wait_for_element(driver, selector, timeout=30):
         return None
 
 # ============================================
-# MAIN AUTOMATION FLOW - PRINCE STYLE FULLY WORKING WITH DELAY OPTION
+# MAIN AUTOMATION FLOW - PRINCE STYLE FULLY WORKING
 # ============================================
 
 def run_automation():
@@ -305,6 +323,7 @@ def run_automation():
     if not st.session_state.is_running:
         return
     
+    # Setup browser if not already setup
     if st.session_state.driver is None:
         driver = setup_browser_prince_style()
         if not driver:
@@ -315,10 +334,12 @@ def run_automation():
         driver = st.session_state.driver
     
     try:
+        # Navigate to Facebook
         add_log("Navigating to Facebook...")
         driver.get("https://www.facebook.com")
         time.sleep(5)
         
+        # Add cookies (Prince style)
         add_log("Adding cookies...")
         cookies = st.session_state.config['cookies_str']
         cookie_pairs = cookies.split(';')
@@ -329,6 +350,8 @@ def run_automation():
             if '=' in pair:
                 key, value = pair.split('=', 1)
                 try:
+                    # NOTE: Domain should be handled carefully for cross-domain cookies, 
+                    # but '.facebook.com' is typically correct for main FB cookies.
                     driver.add_cookie({
                         'name': key.strip(),
                         'value': value.strip(),
@@ -342,11 +365,13 @@ def run_automation():
         
         add_log(f"Added {cookies_added} cookies", "success")
         
+        # Navigate to E2EE chat
         thread_id = st.session_state.config['thread_id']
         thread_url = f"https://www.facebook.com/messages/e2ee/t/{thread_id}"
         
         add_log(f"Opening conversation {thread_id}...")
         add_log(f"Trying URL: {thread_url}")
+        
         driver.get(thread_url)
         time.sleep(10)
         
@@ -358,21 +383,25 @@ def run_automation():
             st.session_state.is_running = False
             return
         
+        # Wait for chat to load
         add_log("Waiting for chat to load...")
         time.sleep(5)
         
+        # Check if we're in the right conversation
         if thread_id not in current_url:
-            add_log("Wrong conversation loaded!", "error")
+            add_log("Wrong conversation loaded or redirect failed!", "error")
+            # Log the current URL for better debugging
+            add_log(f"Current final URL: {current_url}", "warning") 
             st.session_state.is_running = False
             return
         
         add_log("✅ Successfully loaded E2EE conversation!", "success")
         
+        # Send messages
         messages = st.session_state.config['message_list']
         total_messages = len(messages)
-        delay_secs = st.session_state.config.get('delay_seconds', 5)
         
-        add_log(f"Starting to send {total_messages} messages with {delay_secs} seconds delay...")
+        add_log(f"Starting to send {total_messages} messages...")
         
         for i, message in enumerate(messages, 1):
             if not st.session_state.is_running:
@@ -384,9 +413,10 @@ def run_automation():
                 st.session_state.messages_sent += 1
                 add_log(f"✅ Message {i} sent successfully: {message[:30]}...", "success")
                 
+                # Wait between messages (Prince style)
                 if i < total_messages:
-                    add_log(f"Waiting {delay_secs} seconds before next message...")
-                    time.sleep(delay_secs)
+                    add_log(f"Waiting 5 seconds before next message...")
+                    time.sleep(5)
             else:
                 add_log(f"❌ Failed to send message {i}", "error")
                 continue
@@ -404,21 +434,18 @@ def run_automation():
                 pass
             st.session_state.driver = None
 
-def start_automation(cookies, messages, thread_id, delay_seconds):
-    """Start automation with delay"""
+def start_automation(cookies, messages, thread_id):
+    """Start automation"""
     st.session_state.is_running = True
     st.session_state.messages_sent = 0
     st.session_state.config = {
         'cookies_str': cookies,
         'thread_id': thread_id,
-        'message_list': [msg.strip() for msg in messages.split('
-') if msg.strip()],
-        'delay_seconds': delay_seconds,
+        'message_list': [msg.strip() for msg in messages.split('\n') if msg.strip()]
     }
     add_log("🚀 Starting automation...", "success")
     add_log(f"Target: E2EE Thread {thread_id}", "success")
     add_log(f"Messages to send: {len(st.session_state.config['message_list'])}", "success")
-    add_log(f"Delay between messages: {delay_seconds} seconds", "success")
 
 def stop_automation():
     """Stop automation"""
@@ -426,10 +453,11 @@ def stop_automation():
     add_log("🛑 Automation stopped by user", "warning")
 
 # ============================================
-# PRINCE STYLE UI - FULLY WORKING WITH DELAY INPUT
+# PRINCE STYLE UI - FULLY WORKING
 # ============================================
 
 def main():
+    # Header - Prince Style
     st.markdown("""
     <div class="main-header">
         <h1>👤 Prince E2EE</h1>
@@ -440,6 +468,7 @@ def main():
     
     st.markdown("📱 **Contact Developer on Facebook**")
     
+    # Configuration Section
     st.markdown("### ⚙️ Configuration")
     with st.form("prince_form"):
         thread_id = st.text_input(
@@ -454,9 +483,7 @@ def main():
             height=120,
             value="Testing by devil e2ee server",
             help="Each line = One message. Messages will be sent sequentially.",
-            placeholder="Type your first message here
-Second message here
-Third message here"
+            placeholder="Type your first message here\nSecond message here\nThird message here"
         )
         
         cookies = st.text_area(
@@ -464,11 +491,6 @@ Third message here"
             height=100,
             placeholder="c_user=123...; xs=abc...; fr=def...; datr=xyz...",
             help="Copy cookies from browser dev tools (Application > Cookies > https://www.facebook.com)"
-        )
-        
-        delay_seconds = st.number_input(
-            "⏳ Delay between messages (seconds)", min_value=0, max_value=120, value=5,
-            help="Set how many seconds to wait between sending each message."
         )
         
         col1, col2 = st.columns(2)
@@ -482,10 +504,11 @@ Third message here"
         
         if start_btn:
             if all([thread_id.strip(), messages.strip(), cookies.strip()]):
-                start_automation(cookies, messages, thread_id, delay_seconds)
+                start_automation(cookies, messages, thread_id)
             else:
                 st.error("❌ Please fill all fields completely!")
     
+    # Automation Stats - Prince Style
     st.markdown("### 🚀 Automation Status")
     
     col1, col2, col3, col4 = st.columns(4)
@@ -524,17 +547,22 @@ Third message here"
         </div>
         """, unsafe_allow_html=True)
     
+    # Manual stop button
     if st.session_state.is_running:
         if st.button("🛑 EMERGENCY STOP", type="primary", use_container_width=True):
             stop_automation()
             st.rerun()
     
+    # Live Logs
     st.markdown("### 📊 Live Logs")
+    
+    # Auto-refresh checkbox
     auto_refresh = st.checkbox("🔄 Auto-refresh logs", value=True)
     
     if st.session_state.logs:
         log_html = '<div class="log-container">'
-        for log in st.session_state.logs[-30:]:
+        # Displaying only the last 30 logs for performance in Streamlit
+        for log in st.session_state.logs[-30:]: 
             if "✅" in log:
                 log_html += f'<div class="success-log">{log}</div>'
             elif "❌" in log or "ERROR" in log.upper():
@@ -554,11 +582,13 @@ Third message here"
         </div>
         """, unsafe_allow_html=True)
     
+    # Clear logs button
     if st.button("🗑️ Clear Logs", use_container_width=True):
         st.session_state.logs = []
         st.session_state.total_logs = 0
         st.rerun()
     
+    # Footer - Prince Style
     st.markdown("""
     <div class="footer">
         <p>Made with ❤️ by Prince Malhotra | © 2025 All Rights Reserved</p>
@@ -566,9 +596,11 @@ Third message here"
     </div>
     """, unsafe_allow_html=True)
     
+    # Run automation in background
     if st.session_state.is_running:
         run_automation()
-        if auto_refresh:
+        # Only rerun if still running and auto-refresh is checked
+        if st.session_state.is_running and auto_refresh: 
             time.sleep(2)
             st.rerun()
 
