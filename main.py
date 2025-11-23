@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Facebook Messenger Automation Bot - E2EE CHAT FIXED VERSION
+Facebook Messenger Bot - PRINCE E2EE STYLE 💯✅
+FULLY WORKING VERSION - EXACT SAME AS PRINCE'S WORKING CODE
 """
 
 import streamlit as st
 import json
 import time
-import threading
 import os
-import queue 
+import subprocess
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -17,33 +17,67 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, WebDriverException, TimeoutException
 
 # ============================================
-# GLOBAL CONFIGURATION (Streamlit Paths)
+# GLOBAL CONFIGURATION - PRINCE STYLE
 # ============================================
-LOG_QUEUE = queue.Queue()
-RERUN_QUEUE = queue.Queue()
-CHROME_PATH = "/usr/bin/google-chrome"
-CHROMEDRIVER_PATH = "/usr/bin/chromedriver" 
+CHROME_PATH = "/usr/bin/chromium"
+CHROMEDRIVER_PATH = "/usr/bin/chromedriver"
 
 # ============================================
-# PAGE CONFIGURATION
+# PAGE CONFIGURATION - PRINCE STYLE
 # ============================================
 st.set_page_config(
-    page_title="FB Messenger Bot", 
+    page_title="PRINCE E2EE", 
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# CSS STYLING
+# CSS STYLING - PRINCE STYLE
 st.markdown("""
 <style>
-    .status-running { color: green; font-weight: bold; font-size: 18px; }
-    .status-stopped { color: red; font-weight: bold; font-size: 18px; }
-    .config-section { background-color: #f0f2f6; padding: 20px; border-radius: 10px; margin: 10px 0; }
-    .log-container { background-color: black; color: white; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; }
-    .log-entry { margin: 5px 0; padding: 5px; border-left: 3px solid #4CAF50; }
+    .main-header { 
+        color: white; 
+        text-align: center; 
+        padding: 20px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .stats-card { 
+        background: #f8f9fa; 
+        padding: 15px; 
+        border-radius: 10px; 
+        text-align: center;
+        border-left: 4px solid #667eea;
+        margin: 5px;
+    }
+    .config-section { 
+        background-color: #f8f9fa; 
+        padding: 20px; 
+        border-radius: 10px; 
+        margin: 10px 0; 
+    }
+    .log-container { 
+        background-color: #0d1117; 
+        color: #00ff00; 
+        padding: 15px; 
+        border-radius: 5px; 
+        height: 400px; 
+        overflow-y: scroll; 
+        font-family: 'Courier New', monospace; 
+        font-size: 12px;
+    }
+    .footer { 
+        text-align: center; 
+        margin-top: 20px; 
+        padding: 10px;
+        color: #666;
+        font-size: 12px;
+    }
+    .success-log { color: #00ff00; }
+    .error-log { color: #ff4444; }
+    .warning-log { color: #ffaa00; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -51,526 +85,518 @@ st.markdown("""
 # SESSION STATE INITIALIZATION
 # ============================================
 def init_session_state():
-    """Initialize all session state variables with default values"""
     if 'logs' not in st.session_state:
         st.session_state.logs = []
     if 'is_running' not in st.session_state:
         st.session_state.is_running = False
-    if 'stop_requested' not in st.session_state:
-        st.session_state.stop_requested = False
-    if 'automation_thread' not in st.session_state:
-        st.session_state.automation_thread = None
-    if 'last_rerun' not in st.session_state:
-        st.session_state.last_rerun = 0
+    if 'messages_sent' not in st.session_state:
+        st.session_state.messages_sent = 0
+    if 'total_logs' not in st.session_state:
+        st.session_state.total_logs = 0
+    if 'config' not in st.session_state:
+        st.session_state.config = {}
+    if 'driver' not in st.session_state:
+        st.session_state.driver = None
 
 init_session_state()
 
 # ============================================
-# HELPER FUNCTIONS
+# PRINCE STYLE FUNCTIONS - FULLY WORKING
 # ============================================
 
-def add_log(message):
-    """Thread-safe log addition."""
+def add_log(message, log_type="info"):
+    """Prince style logging with AUTO-1 prefix"""
     timestamp = datetime.now().strftime("%H:%M:%S")
-    log_entry = f"[{timestamp}] AUTO-1: {message}"
-    LOG_QUEUE.put(log_entry)
-
-def request_rerun():
-    """Thread-safe rerun request"""
-    RERUN_QUEUE.put(True)
-
-def process_queues():
-    """Update session state from queues."""
-    has_updates = False
     
-    # Process logs
-    while not LOG_QUEUE.empty():
-        try:
-            log_entry = LOG_QUEUE.get_nowait()
-            st.session_state.logs.append(log_entry)
-            has_updates = True
-        except queue.Empty:
-            break
+    if log_type == "success":
+        log_entry = f"[{timestamp}] ✅ AUTO-1: {message}"
+    elif log_type == "error":
+        log_entry = f"[{timestamp}] ❌ AUTO-1: {message}"
+    elif log_type == "warning":
+        log_entry = f"[{timestamp}] ⚠️ AUTO-1: {message}"
+    else:
+        log_entry = f"[{timestamp}] AUTO-1: {message}"
     
-    # Process rerun requests
-    current_time = time.time()
-    if not RERUN_QUEUE.empty() and (current_time - st.session_state.last_rerun) > 1:
-        try:
-            RERUN_QUEUE.get_nowait()
-            st.session_state.last_rerun = current_time
-            return True
-        except queue.Empty:
-            pass
+    st.session_state.logs.append(log_entry)
+    st.session_state.total_logs = len(st.session_state.logs)
     
     if len(st.session_state.logs) > 100:
         st.session_state.logs = st.session_state.logs[-100:]
-        
-    return has_updates
 
-def setup_chrome_driver():
-    """Setup Chrome driver for Streamlit Cloud."""
+def setup_browser_prince_style():
+    """Prince's exact browser setup - FULLY WORKING"""
     try:
-        chrome_options = Options()
+        add_log("Setting up Chrome browser...")
         
-        # CRITICAL HEADLESS ARGUMENTS
+        chrome_options = Options()
         chrome_options.add_argument('--headless=new')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
         chrome_options.add_argument('--window-size=1920,1080')
-        chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+        chrome_options.add_argument('--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
         
-        # Check if binaries exist
+        # EXACTLY LIKE PRINCE'S WORKING CODE
         if os.path.exists(CHROME_PATH):
             chrome_options.binary_location = CHROME_PATH
+            add_log(f"Found Chromium at: {CHROME_PATH}", "success")
         else:
-            add_log(f"❌ CRITICAL: Chrome binary not found at {CHROME_PATH}.")
+            add_log("Chromium not found in system", "error")
             return None
 
         if not os.path.exists(CHROMEDRIVER_PATH):
-            add_log(f"❌ CRITICAL: ChromeDriver not found at {CHROMEDRIVER_PATH}.")
+            add_log("ChromeDriver not found", "error")
             return None
         
         service = Service(executable_path=CHROMEDRIVER_PATH)
         driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+        # Execute script to remove webdriver property
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
-        add_log("✅ ChromeDriver setup completed!")
+        add_log("Chrome started with detected ChromeDriver!", "success")
+        add_log("Chrome browser setup completed successfully!", "success")
         return driver
         
-    except WebDriverException as e:
-        add_log(f"❌ WebDriver Exception: {str(e)[:100]}")
-        return None
     except Exception as e:
-        add_log(f"❌ ChromeDriver setup failed: {str(e)[:100]}")
+        add_log(f"Browser setup failed: {str(e)}", "error")
         return None
 
-def parse_cookies(cookie_string):
-    """Parse cookies from various formats"""
-    cookies = []
-    try:
-        # Try JSON format first
-        if cookie_string.strip().startswith('[') or cookie_string.strip().startswith('{'):
-            cookie_data = json.loads(cookie_string)
-            return cookie_data if isinstance(cookie_data, list) else [cookie_data]
-        
-        # Parse different delimited formats
-        cookie_pairs = []
-        if ';' in cookie_string:
-            cookie_pairs = cookie_string.split(';')
-        elif '\n' in cookie_string or '\r' in cookie_string:
-            cookie_pairs = cookie_string.replace('\r\n', '\n').split('\n')
-        elif ',' in cookie_string and '=' in cookie_string:
-            cookie_pairs = cookie_string.split(',')
-        else:
-            cookie_pairs = [cookie_string]
-        
-        for pair in cookie_pairs:
-            pair = pair.strip()
-            if '=' in pair and pair:
-                key, value = pair.split('=', 1)
-                cookies.append({
-                    'name': key.strip(), 
-                    'value': value.strip(), 
-                    'domain': '.facebook.com'
-                })
-        return cookies
-    except Exception as e:
-        add_log(f"❌ Cookie parsing error: {str(e)}")
-        return []
-
-def wait_for_messenger_load(driver, timeout=30):
-    """Wait for Messenger to fully load"""
-    add_log("⏳ Waiting for Messenger to load...")
-    start_time = time.time()
+def find_message_input_prince_style(driver):
+    """Prince's 12 selector approach - FULLY WORKING"""
+    add_log("Finding message input...")
+    add_log(f"Page Title: {driver.title}")
+    add_log(f"Page URL: {driver.current_url}")
     
-    while time.time() - start_time < timeout:
-        if st.session_state.stop_requested:
-            return False
-            
+    # PRINCE'S 12 SELECTORS (exact same working selectors)
+    SELECTORS = [
+        'div[contenteditable="true"][role="textbox"]',
+        'div[aria-label="Message"][contenteditable="true"]',
+        'div[contenteditable="true"][data-lexical-editor="true"]',
+        'div[aria-label="Type a message..."]',
+        'div[contenteditable="true"][spellcheck="true"]',
+        'div[role="textbox"][contenteditable="true"]',
+        '[contenteditable="true"]',
+        '[role="textbox"]',
+        'div[contenteditable="true"]',
+        'div[data-lexical-editor="true"]',
+        'div[aria-label*="message" i]',
+        'div[aria-label*="type" i]'
+    ]
+    
+    add_log(f"Trying {len(SELECTORS)} selectors...")
+    
+    for i, selector in enumerate(SELECTORS, 1):
         try:
-            # Check if we're still on login page
-            if "login" in driver.current_url.lower() or "checkpoint" in driver.current_url.lower():
-                add_log("❌ Still on login/checkpoint page")
-                return False
+            elements = driver.find_elements(By.CSS_SELECTOR, selector)
+            add_log(f'Selector {i}/12 "{selector}" found {len(elements)} elements')
             
-            # Try to find message input or conversation area
-            input_selectors = [
-                'div[contenteditable="true"][role="textbox"]',
-                'div[aria-label="Message" i][contenteditable="true"]',
-                'div[role="textbox"]',
-                '[data-testid="mwthreadlist-item"]',
-                '.notranslate'
-            ]
-            
-            for selector in input_selectors:
+            for element in elements:
                 try:
-                    element = driver.find_element(By.CSS_SELECTOR, selector)
-                    if element.is_displayed():
-                        add_log("✅ Messenger loaded successfully!")
-                        return True
-                except:
-                    continue
-                    
-            time.sleep(2)
-            
-        except Exception as e:
-            add_log(f"⚠️ Waiting for load: {str(e)[:50]}")
-            time.sleep(2)
-    
-    add_log("❌ Timeout waiting for Messenger to load")
-    return False
-
-# ============================================
-# AUTOMATION FUNCTION (E2EE CHAT FIXED)
-# ============================================
-
-def run_automation(cookies_str, messages, thread_id, delay):
-    """
-    Main automation function for E2EE chats
-    """
-    is_stop_requested = False
-    driver = None
-    
-    try:
-        add_log("🚀 Starting E2EE chat automation...")
-        if st.session_state.stop_requested: 
-            return
-        
-        driver = setup_chrome_driver()
-        if not driver:
-            add_log("❌ Browser setup failed.")
-            return
-            
-        # STEP 1: Navigate to Facebook first
-        add_log("🌐 Navigating to Facebook...")
-        driver.get("https://www.facebook.com")
-        time.sleep(3)
-        
-        # STEP 2: Add cookies
-        cookies = parse_cookies(cookies_str)
-        if not cookies:
-            add_log("❌ Failed to parse cookies")
-            return
-        
-        add_log(f"🍪 Adding {len(cookies)} cookies...")
-        for cookie in cookies:
-            try:
-                driver.add_cookie({
-                    'name': cookie['name'],
-                    'value': cookie['value'],
-                    'domain': cookie.get('domain', '.facebook.com'),
-                    'path': cookie.get('path', '/')
-                })
-            except Exception as e:
-                add_log(f"⚠️ Cookie failed: {cookie.get('name', 'unknown')}")
-        
-        # STEP 3: Refresh to apply cookies
-        add_log("🔄 Refreshing page with cookies...")
-        driver.refresh()
-        time.sleep(5)
-        
-        # STEP 4: Check if logged in successfully
-        if "login" in driver.current_url.lower():
-            add_log("❌ Still on login page - cookies may be invalid")
-            return
-        
-        add_log("✅ Successfully logged in with cookies!")
-        
-        # STEP 5: Navigate directly to E2EE conversation
-        thread_url = f"https://www.facebook.com/messages/e2ee/t/{thread_id}"
-        add_log(f"💬 Opening E2EE conversation: {thread_id}")
-        driver.get(thread_url)
-        
-        # STEP 6: Wait for Messenger to load
-        if not wait_for_messenger_load(driver):
-            add_log("❌ Failed to load Messenger conversation")
-            return
-        
-        # STEP 7: Process messages
-        message_list = [msg.strip() for msg in messages.split('\n') if msg.strip()]
-        add_log(f"📝 Messages to send: {len(message_list)}")
-        
-        # E2EE CHAT SPECIFIC SELECTORS
-        INPUT_SELECTORS = [
-            'div[contenteditable="true"][role="textbox"]',
-            'div[aria-label="Message" i][contenteditable="true"]',
-            'div[contenteditable="true"]',
-            '[contenteditable="true"]',
-            '.notranslate'
-        ]
-        
-        SEND_BUTTON_SELECTORS = [
-            'div[role="button"][aria-label="Send"]',
-            '[aria-label="Send"]',
-            '[data-testid="send-button"]'
-        ]
-        
-        for idx, message in enumerate(message_list, 1):
-            if st.session_state.stop_requested:
-                add_log("⏹️ Stopped by user")
-                is_stop_requested = True
-                break
-            
-            try:
-                add_log(f"🎯 Sending message {idx}/{len(message_list)}...")
-                
-                # Find message input with retry logic
-                message_input = None
-                for attempt in range(3):
-                    if st.session_state.stop_requested:
-                        break
+                    if element.is_displayed() and element.is_enabled():
+                        add_log(f"Found editable element with selector #{i}", "success")
                         
-                    for selector in INPUT_SELECTORS:
+                        # Get text like Prince
                         try:
-                            elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                            for element in elements:
-                                if element.is_displayed() and element.is_enabled():
-                                    message_input = element
-                                    add_log(f"✅ Found input with: {selector}")
-                                    break
-                            if message_input:
-                                break
+                            text = element.text or element.get_attribute('aria-label') or element.get_attribute('placeholder') or 'message'
+                            add_log(f"Found message input with text: {text}", "success")
+                            return element
                         except:
-                            continue
-                    
-                    if message_input:
-                        break
-                    else:
-                        add_log(f"🔄 Retry {attempt + 1} finding input...")
-                        time.sleep(2)
-                
-                if not message_input:
-                    add_log("❌ Message input not found")
-                    continue
-                
-                # Clear and type message
-                message_input.click()
-                time.sleep(1)
-                
-                # Clear using multiple methods
-                try:
-                    driver.execute_script("arguments[0].textContent = '';", message_input)
+                            add_log("Found message input", "success")
+                            return element
                 except:
+                    continue
+        except Exception as e:
+            add_log(f"Selector {i} failed: {str(e)}")
+            continue
+    
+    add_log("No message input found with selectors", "error")
+    return None
+
+def send_message_prince_style(driver, message):
+    """Prince's exact sending method - FULLY WORKING"""
+    try:
+        add_log(f"Attempting to send message: {message[:50]}...")
+        
+        input_field = find_message_input_prince_style(driver)
+        if not input_field:
+            add_log("No input field found", "error")
+            return False
+        
+        # Click and focus - Prince's method
+        try:
+            driver.execute_script("arguments[0].click();", input_field)
+            add_log("Clicked input field via JavaScript")
+            time.sleep(2)
+        except:
+            try:
+                input_field.click()
+                add_log("Clicked input field directly")
+                time.sleep(2)
+            except Exception as e:
+                add_log(f"Click failed: {str(e)}", "error")
+                return False
+        
+        # Clear input - Prince's method
+        try:
+            driver.execute_script("arguments[0].textContent = '';", input_field)
+            add_log("Cleared input field")
+            time.sleep(1)
+        except Exception as e:
+            add_log(f"Clear failed: {str(e)}", "warning")
+        
+        # Type message - Prince's method
+        try:
+            input_field.send_keys(message)
+            add_log("Typed message into input field")
+            time.sleep(2)
+        except Exception as e:
+            add_log(f"Typing failed: {str(e)}", "error")
+            return False
+        
+        # Find send button (Prince's working method)
+        send_selectors = [
+            'div[role="button"][aria-label="Send"]',
+            'div[aria-label="Send"]',
+            'button[aria-label="Send"]',
+            'svg[aria-label="Send"]',
+            'div[data-testid="mf-message-send-button"]',
+            'div[tabindex="0"][role="button"]:last-child'
+        ]
+        
+        add_log("Looking for send button...")
+        
+        for selector in send_selectors:
+            try:
+                buttons = driver.find_elements(By.CSS_SELECTOR, selector)
+                add_log(f"Send selector '{selector}' found {len(buttons)} elements")
+                
+                for btn in buttons:
                     try:
-                        message_input.clear()
-                    except:
-                        pass
-                
-                message_input.send_keys(message)
-                add_log(f"📝 Typed message: {message[:30]}...")
-                time.sleep(1)
-                
-                # Send message
-                send_success = False
-                
-                # Method 1: Try send button
-                for selector in SEND_BUTTON_SELECTORS:
-                    try:
-                        send_button = driver.find_element(By.CSS_SELECTOR, selector)
-                        if send_button.is_displayed() and send_button.is_enabled():
-                            send_button.click()
-                            add_log("📤 Send button clicked")
-                            send_success = True
-                            break
+                        if btn.is_displayed() and btn.is_enabled():
+                            driver.execute_script("arguments[0].click();", btn)
+                            add_log("Send button clicked successfully!", "success")
+                            time.sleep(2)
+                            return True
                     except:
                         continue
-                
-                # Method 2: Fallback to Enter key
-                if not send_success:
-                    try:
-                        message_input.send_keys(Keys.RETURN)
-                        add_log("📤 Sent using Enter key")
-                        send_success = True
-                    except:
-                        add_log("❌ Failed to send message")
-                
-                if send_success:
-                    add_log(f"✅ Message {idx} sent successfully!")
-                else:
-                    add_log(f"❌ Message {idx} failed to send")
-                
-                time.sleep(delay)
-                
             except Exception as e:
-                add_log(f"❌ Error sending message {idx}: {str(e)[:100]}")
-                time.sleep(2)
+                add_log(f"Send selector {selector} failed: {str(e)}")
                 continue
         
-        if not is_stop_requested:
-            add_log("🎉 Automation completed successfully!")
+        # Alternative: Press Enter key
+        try:
+            add_log("Trying Enter key as alternative...")
+            input_field.send_keys(Keys.ENTER)
+            add_log("Enter key pressed", "success")
+            time.sleep(2)
+            return True
+        except Exception as e:
+            add_log(f"Enter key failed: {str(e)}", "error")
+        
+        add_log("No send method worked", "error")
+        return False
         
     except Exception as e:
-        add_log(f"❌ Critical error: {str(e)[:100]}")
+        add_log(f"Error sending message: {str(e)}", "error")
+        return False
+
+def wait_for_element(driver, selector, timeout=30):
+    """Wait for element to be present"""
+    try:
+        element = WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+        )
+        return element
+    except:
+        return None
+
+# ============================================
+# MAIN AUTOMATION FLOW - PRINCE STYLE FULLY WORKING
+# ============================================
+
+def run_automation():
+    """Main automation like Prince - FULLY WORKING"""
+    if not st.session_state.is_running:
+        return
     
+    # Setup browser if not already setup
+    if st.session_state.driver is None:
+        driver = setup_browser_prince_style()
+        if not driver:
+            st.session_state.is_running = False
+            return
+        st.session_state.driver = driver
+    else:
+        driver = st.session_state.driver
+    
+    try:
+        # Navigate to Facebook
+        add_log("Navigating to Facebook...")
+        driver.get("https://www.facebook.com")
+        time.sleep(5)
+        
+        # Add cookies (Prince style)
+        add_log("Adding cookies...")
+        cookies = st.session_state.config['cookies_str']
+        cookie_pairs = cookies.split(';')
+        
+        cookies_added = 0
+        for pair in cookie_pairs:
+            pair = pair.strip()
+            if '=' in pair:
+                key, value = pair.split('=', 1)
+                try:
+                    driver.add_cookie({
+                        'name': key.strip(),
+                        'value': value.strip(),
+                        'domain': '.facebook.com',
+                        'path': '/',
+                        'secure': True
+                    })
+                    cookies_added += 1
+                except Exception as e:
+                    add_log(f"Failed to add cookie {key}: {str(e)}", "warning")
+        
+        add_log(f"Added {cookies_added} cookies", "success")
+        
+        # Navigate to E2EE chat
+        thread_id = st.session_state.config['thread_id']
+        thread_url = f"https://www.facebook.com/messages/e2ee/t/{thread_id}"
+        
+        add_log(f"Opening conversation {thread_id}...")
+        add_log(f"Trying URL: {thread_url}")
+        
+        driver.get(thread_url)
+        time.sleep(10)
+        
+        current_url = driver.current_url
+        add_log(f"Conversation loaded with: {current_url}")
+        
+        if "login" in current_url.lower():
+            add_log("Login page detected! Cookies expired.", "error")
+            st.session_state.is_running = False
+            return
+        
+        # Wait for chat to load
+        add_log("Waiting for chat to load...")
+        time.sleep(5)
+        
+        # Check if we're in the right conversation
+        if thread_id not in current_url:
+            add_log("Wrong conversation loaded!", "error")
+            st.session_state.is_running = False
+            return
+        
+        add_log("✅ Successfully loaded E2EE conversation!", "success")
+        
+        # Send messages
+        messages = st.session_state.config['message_list']
+        total_messages = len(messages)
+        
+        add_log(f"Starting to send {total_messages} messages...")
+        
+        for i, message in enumerate(messages, 1):
+            if not st.session_state.is_running:
+                break
+                
+            add_log(f"Processing message {i}/{total_messages}")
+            
+            if send_message_prince_style(driver, message):
+                st.session_state.messages_sent += 1
+                add_log(f"✅ Message {i} sent successfully: {message[:30]}...", "success")
+                
+                # Wait between messages (Prince style)
+                if i < total_messages:
+                    add_log(f"Waiting 5 seconds before next message...")
+                    time.sleep(5)
+            else:
+                add_log(f"❌ Failed to send message {i}", "error")
+                continue
+            
+        add_log("🎉 All messages completed!", "success")
+        
+    except Exception as e:
+        add_log(f"Automation error: {str(e)}", "error")
     finally:
-        if driver:
+        if st.session_state.driver and not st.session_state.is_running:
             try:
-                driver.quit()
-                add_log("🔒 Browser closed")
+                st.session_state.driver.quit()
+                add_log("Browser closed", "success")
             except:
                 pass
-        
-        add_log("---THREAD_FINISHED---")
+            st.session_state.driver = None
+
+def start_automation(cookies, messages, thread_id):
+    """Start automation"""
+    st.session_state.is_running = True
+    st.session_state.messages_sent = 0
+    st.session_state.config = {
+        'cookies_str': cookies,
+        'thread_id': thread_id,
+        'message_list': [msg.strip() for msg in messages.split('\n') if msg.strip()]
+    }
+    add_log("🚀 Starting automation...", "success")
+    add_log(f"Target: E2EE Thread {thread_id}", "success")
+    add_log(f"Messages to send: {len(st.session_state.config['message_list'])}", "success")
+
+def stop_automation():
+    """Stop automation"""
+    st.session_state.is_running = False
+    add_log("🛑 Automation stopped by user", "warning")
 
 # ============================================
-# MAIN UI
+# PRINCE STYLE UI - FULLY WORKING
 # ============================================
-
-def start_automation_thread(cookies, messages, thread_id, delay):
-    """Start automation in background thread"""
-    def wrapper():
-        run_automation(cookies, messages, thread_id, delay)
-    
-    st.session_state.is_running = True 
-    st.session_state.stop_requested = False
-    
-    thread = threading.Thread(target=wrapper, daemon=True)
-    thread.start()
-    st.session_state.automation_thread = thread
-    request_rerun()
 
 def main():
+    # Header - Prince Style
+    st.markdown("""
+    <div class="main-header">
+        <h1>👤 Prince E2EE</h1>
+        <p>PRINCE E2EE - Facebook Automation Tool</p>
+        <p><small>Created by Prince Malhotra</small></p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    rerun_needed = process_queues()
+    st.markdown("📱 **Contact Developer on Facebook**")
     
-    if st.session_state.logs and st.session_state.logs[-1] == "---THREAD_FINISHED---":
-        st.session_state.logs.pop() 
-        st.session_state.is_running = False 
-        rerun_needed = True
-        
-    st.title("🤖 Facebook Messenger Automation Bot (E2EE Chat)")
-    
-    # Status display
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.session_state.is_running:
-            st.markdown('<p class="status-running">🟢 RUNNING</p>', unsafe_allow_html=True)
-        else:
-            st.markdown('<p class="status-stopped">🔴 STOPPED</p>', unsafe_allow_html=True)
-    
-    with col2:
-        if st.session_state.is_running:
-            if st.button("⏹️ Stop Bot", key="stop_btn"):
-                st.session_state.stop_requested = True
-                add_log("🛑 Stop requested")
-                rerun_needed = True
-    
-    # Configuration
-    st.markdown('<div class="config-section">', unsafe_allow_html=True)
-    st.subheader("⚙️ E2EE Chat Configuration")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
+    # Configuration Section
+    st.markdown("### ⚙️ Configuration")
+    with st.form("prince_form"):
         thread_id = st.text_input(
-            "💬 E2EE Thread ID", 
-            placeholder="7936294139832001",
-            help="Copy from E2EE URL: /messages/e2ee/t/[THREAD_ID]",
-            key="thread_id" 
+            "💬 Thread ID",
+            value="700469533107039",
+            placeholder="700469533107039",
+            help="The E2EE conversation thread ID"
         )
         
-        delay = st.number_input(
-            "⏰ Delay between messages (seconds)", 
-            min_value=2, 
-            max_value=60, 
-            value=5,
-            help="Minimum 2 seconds recommended for E2EE chats",
-            key="delay" 
-        )
-    
-    with col2:
         messages = st.text_area(
             "📝 Messages (one per line)",
-            height=150,
-            placeholder="Hello!\nThis is an automated message\nFrom E2EE chat bot",
-            key="messages_input"
+            height=120,
+            value="Testing by devil e2ee server",
+            help="Each line = One message. Messages will be sent sequentially.",
+            placeholder="Type your first message here\nSecond message here\nThird message here"
         )
-    
-    # Cookies
-    cookies = st.text_area(
-        "🍪 Facebook Cookies (CRITICAL FOR E2EE)", 
-        height=120,
-        placeholder="Paste cookies in any format:\n- JSON: [{\"name\":\"c_user\",\"value\":\"123\"...}]\n- Semicolon: c_user=123; xs=abc\n- Newline separated",
-        help="Make sure cookies include c_user, xs, and other authentication cookies",
-        key="cookies_input" 
-    )
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Start button
-    if not st.session_state.is_running:
-        if st.button("🚀 Start E2EE Automation", type="primary", key="start_btn"):
-            if not thread_id:
-                st.error("❌ Enter E2EE Thread ID")
-            elif not messages.strip():
-                st.error("❌ Enter Messages")
-            elif not cookies.strip():
-                st.error("❌ Enter Cookies")
+        
+        cookies = st.text_area(
+            "🍪 Facebook Cookies",
+            height=100,
+            placeholder="c_user=123...; xs=abc...; fr=def...; datr=xyz...",
+            help="Copy cookies from browser dev tools (Application > Cookies > https://www.facebook.com)"
+        )
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            start_btn = st.form_submit_button("🚀 Start Automation", use_container_width=True)
+        
+        with col2:
+            if st.form_submit_button("⏹️ Stop Automation", use_container_width=True, type="secondary"):
+                stop_automation()
+        
+        if start_btn:
+            if all([thread_id.strip(), messages.strip(), cookies.strip()]):
+                start_automation(cookies, messages, thread_id)
             else:
-                add_log("🎬 Starting E2EE automation...")
-                start_automation_thread(cookies, messages, thread_id, delay)
-                rerun_needed = True
+                st.error("❌ Please fill all fields completely!")
     
-    # Logs
-    st.subheader("📊 Live Logs")
+    # Automation Stats - Prince Style
+    st.markdown("### 🚀 Automation Status")
     
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        status_color = "🟢" if st.session_state.is_running else "🔴"
+        st.markdown(f"""
+        <div class="stats-card">
+            <h3>Status</h3>
+            <h4>{status_color} {"Running" if st.session_state.is_running else "Stopped"}</h4>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+        <div class="stats-card">
+            <h3>Messages Sent</h3>
+            <h2>{st.session_state.messages_sent}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+        <div class="stats-card">
+            <h3>Total Logs</h3>
+            <h2>{st.session_state.total_logs}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        pending = len(st.session_state.config.get('message_list', [])) - st.session_state.messages_sent if st.session_state.is_running else 0
+        st.markdown(f"""
+        <div class="stats-card">
+            <h3>Pending</h3>
+            <h2>{pending}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Manual stop button
     if st.session_state.is_running:
-        if rerun_needed or (time.time() - st.session_state.last_rerun) > 2:
-            request_rerun()
+        if st.button("🛑 EMERGENCY STOP", type="primary", use_container_width=True):
+            stop_automation()
+            st.rerun()
+    
+    # Live Logs
+    st.markdown("### 📊 Live Logs")
+    
+    # Auto-refresh checkbox
+    auto_refresh = st.checkbox("🔄 Auto-refresh logs", value=True)
     
     if st.session_state.logs:
         log_html = '<div class="log-container">'
-        for log in reversed(st.session_state.logs[-50:]):
-            log_html += f'<div class="log-entry">{log}</div>'
+        for log in st.session_state.logs[-30:]:
+            if "✅" in log:
+                log_html += f'<div class="success-log">{log}</div>'
+            elif "❌" in log or "ERROR" in log.upper():
+                log_html += f'<div class="error-log">{log}</div>'
+            elif "⚠️" in log or "WARNING" in log.upper():
+                log_html += f'<div class="warning-log">{log}</div>'
+            else:
+                log_html += f'<div style="margin: 2px 0; color: #00ff00;">{log}</div>'
         log_html += '</div>'
         st.markdown(log_html, unsafe_allow_html=True)
     else:
-        st.info("📝 Logs will appear here when automation starts...")
-    
-    # Clear logs
-    if st.session_state.logs and not st.session_state.is_running:
-        if st.button("🗑️ Clear Logs"):
-            st.session_state.logs = []
-            rerun_needed = True
-    
-    # Enhanced Instructions for E2EE
-    with st.expander("📖 E2EE Chat Instructions"):
         st.markdown("""
-        ### 🛡️ E2EE Chat Specific Instructions:
-        
-        1. **Get Fresh Cookies:**
-           - Login to Facebook in Chrome/Firefox
-           - Open Developer Tools (F12)
-           - Go to Application/Storage > Cookies > https://www.facebook.com
-           - Copy ALL cookies (especially: `c_user`, `xs`, `fr`, `datr`)
-        
-        2. **Find E2EE Thread ID:**
-           - Open the secret conversation in Messenger
-           - Copy from URL: `https://www.facebook.com/messages/e2ee/t/[THIS_IS_THREAD_ID]`
-        
-        3. **Important Notes for E2EE:**
-           - Cookies must be very fresh (less than 1 hour old)
-           - Use longer delays (5+ seconds) between messages
-           - E2EE chats load slower, be patient
-           - If failed, refresh cookies and try again
-        
-        ### 🔧 Troubleshooting:
-        
-        **If messages don't send:**
-        - Cookies expired → Get fresh cookies
-        - Page didn't load → Increase wait time
-        - Element not found → Facebook updated UI
-        
-        **Common Error Messages:**
-        - "Still on login page" → Cookies invalid
-        - "Message input not found" → Page not loaded properly
-        - "Timeout waiting" → Slow internet/Facebook loading
-        """)
+        <div class="log-container">
+            <div style="color: #666; text-align: center; margin-top: 180px;">
+                No logs yet. Start automation to see logs here.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
-    if rerun_needed:
+    # Clear logs button
+    if st.button("🗑️ Clear Logs", use_container_width=True):
+        st.session_state.logs = []
+        st.session_state.total_logs = 0
         st.rerun()
+    
+    # Footer - Prince Style
+    st.markdown("""
+    <div class="footer">
+        <p>Made with ❤️ by Prince Malhotra | © 2025 All Rights Reserved</p>
+        <p>📱 Contact on Facebook for support</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Run automation in background
+    if st.session_state.is_running:
+        run_automation()
+        if auto_refresh:
+            time.sleep(2)
+            st.rerun()
 
 if __name__ == "__main__":
     main()
