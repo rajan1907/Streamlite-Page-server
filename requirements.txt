@@ -1,5 +1,5 @@
-# Install required packages
-pip install streamlit selenium webdriver-manager
-
-# Run the application
-streamlit run main.py
+Flask
+requests
+selenium
+gunicorn
+chromedriver-manager
