@@ -20,6 +20,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 # ============================================
+# WEBDRIVER MANAGER FOR PLUG-AND-PLAY SETUP
+# ============================================
+try:
+    from webdriver_manager.chrome import ChromeDriverManager
+    WEBDRIVER_MANAGER_AVAILABLE = True
+except ImportError:
+    WEBDRIVER_MANAGER_AVAILABLE = False
+    st.warning("⚠️ webdriver_manager not installed. Run: pip install webdriver-manager")
+
+# ============================================
 # GLOBAL CONFIGURATION - PRINCE STYLE
 # ============================================
 # Multiple possible Chrome/Chromium paths for different environments
@@ -31,13 +41,6 @@ POSSIBLE_CHROME_PATHS = [
     "/snap/bin/chromium",
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-]
-
-POSSIBLE_CHROMEDRIVER_PATHS = [
-    "/usr/bin/chromedriver",
-    "/usr/local/bin/chromedriver",
-    "/snap/bin/chromedriver",
-    "chromedriver"  # If it's in PATH
 ]
 
 # ============================================
@@ -117,8 +120,8 @@ def init_session_state():
         st.session_state.browser_found = False
     if 'chrome_path' not in st.session_state:
         st.session_state.chrome_path = None
-    if 'chromedriver_path' not in st.session_state:
-        st.session_state.chromedriver_path = None
+    if 'webdriver_manager_used' not in st.session_state:
+        st.session_state.webdriver_manager_used = False
 
 init_session_state()
 
@@ -164,46 +167,43 @@ def find_chrome_binary():
     add_log("❌ Chrome/Chromium not found in system", "error")
     return None
 
-def find_chromedriver():
-    """Find ChromeDriver binary in the system"""
-    add_log("🔍 Searching for ChromeDriver...")
-    
-    # Check if chromedriver is in PATH
-    chromedriver_path = shutil.which("chromedriver")
-    if chromedriver_path:
-        add_log(f"✅ Found ChromeDriver in PATH: {chromedriver_path}", "success")
-        return chromedriver_path
-    
-    # Check common installation paths
-    for path in POSSIBLE_CHROMEDRIVER_PATHS:
-        if os.path.exists(path):
-            add_log(f"✅ Found ChromeDriver at: {path}", "success")
-            return path
-    
-    add_log("❌ ChromeDriver not found", "error")
-    return None
-
 def install_chromium():
     """Install Chromium if not available"""
     add_log("🔄 Attempting to install Chromium...")
     try:
-        # Try to install chromium using package manager
-        result = subprocess.run(['apt-get', 'update'], capture_output=True, text=True)
-        result = subprocess.run(['apt-get', 'install', '-y', 'chromium', 'chromium-driver'], 
-                              capture_output=True, text=True)
+        # Try different package managers
+        commands = [
+            ['apt-get', 'update'],
+            ['apt-get', 'install', '-y', 'chromium', 'chromium-driver'],
+            ['yum', 'install', '-y', 'chromium'],
+            ['dnf', 'install', '-y', 'chromium'],
+            ['pacman', '-Sy', '--noconfirm', 'chromium']
+        ]
         
-        if result.returncode == 0:
+        for cmd in commands:
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                if result.returncode == 0:
+                    add_log(f"✅ Command succeeded: {' '.join(cmd)}", "success")
+                    break
+            except:
+                continue
+        
+        # Check if installation worked
+        chrome_path = find_chrome_binary()
+        if chrome_path:
             add_log("✅ Chromium installed successfully!", "success")
-            return find_chrome_binary()
+            return chrome_path
         else:
-            add_log("❌ Failed to install Chromium", "error")
+            add_log("❌ Chromium installation may have failed", "error")
             return None
+            
     except Exception as e:
         add_log(f"❌ Installation failed: {str(e)}", "error")
         return None
 
 def setup_browser_prince_style():
-    """Prince's exact browser setup - FIXED VERSION"""
+    """Prince's exact browser setup - PLUG & PLAY VERSION"""
     try:
         add_log("Setting up Chrome browser...")
         
@@ -216,15 +216,8 @@ def setup_browser_prince_style():
                 add_log("❌ Could not find or install Chrome/Chromium", "error")
                 return None
         
-        # Find ChromeDriver
-        chromedriver_path = find_chromedriver()
-        if not chromedriver_path:
-            add_log("❌ ChromeDriver not found", "error")
-            return None
-        
-        # Store paths in session state
+        # Store path in session state
         st.session_state.chrome_path = chrome_path
-        st.session_state.chromedriver_path = chromedriver_path
         st.session_state.browser_found = True
         
         chrome_options = Options()
@@ -241,10 +234,25 @@ def setup_browser_prince_style():
         # Set Chrome binary location
         chrome_options.binary_location = chrome_path
         add_log(f"✅ Using Chrome binary: {chrome_path}", "success")
-        add_log(f"✅ Using ChromeDriver: {chromedriver_path}", "success")
 
-        service = Service(executable_path=chromedriver_path)
-        driver = webdriver.Chrome(service=service, options=chrome_options)
+        # PLUG-AND-PLAY CHROMEDRIVER SETUP USING WEBDRIVER_MANAGER
+        if WEBDRIVER_MANAGER_AVAILABLE:
+            try:
+                add_log("🔄 Setting up ChromeDriver using webdriver_manager...")
+                service = Service(ChromeDriverManager().install())
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+                st.session_state.webdriver_manager_used = True
+                add_log("✅ ChromeDriver setup completed using webdriver_manager!", "success")
+            except Exception as e:
+                add_log(f"❌ webdriver_manager failed: {str(e)}", "error")
+                add_log("🔄 Falling back to system ChromeDriver...")
+                # Fallback to system chromedriver
+                service = Service()
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+        else:
+            add_log("🔄 Using system ChromeDriver...")
+            service = Service()
+            driver = webdriver.Chrome(service=service, options=chrome_options)
         
         # Execute script to remove webdriver property
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
@@ -558,28 +566,75 @@ def main():
     
     # Browser Status
     st.markdown("### 🌐 Browser Status")
+    
+    if not WEBDRIVER_MANAGER_AVAILABLE:
+        st.error("""
+        ❌ **webdriver_manager not installed!**
+        
+        For plug-and-play setup, install it with:
+        ```bash
+        pip install webdriver-manager
+        ```
+        
+        This will automatically handle ChromeDriver installation and version management.
+        """)
+    
     col1, col2 = st.columns(2)
     
     with col1:
         if st.button("🔍 Detect Browser", use_container_width=True):
             chrome_path = find_chrome_binary()
-            chromedriver_path = find_chromedriver()
             
-            if chrome_path and chromedriver_path:
+            if chrome_path:
                 st.session_state.browser_found = True
                 st.session_state.chrome_path = chrome_path
-                st.session_state.chromedriver_path = chromedriver_path
-                st.success(f"✅ Chrome: {chrome_path}")
-                st.success(f"✅ ChromeDriver: {chromedriver_path}")
+                st.success(f"✅ Chrome found: {chrome_path}")
+                
+                if WEBDRIVER_MANAGER_AVAILABLE:
+                    st.success("✅ webdriver_manager ready for automatic ChromeDriver setup!")
+                else:
+                    st.warning("⚠️ Install webdriver_manager for automatic ChromeDriver management")
             else:
-                st.error("❌ Browser components not found")
+                st.error("❌ Browser not found")
     
     with col2:
         if st.session_state.browser_found:
             st.success("✅ Browser Ready")
             st.info(f"Chrome: {st.session_state.chrome_path}")
+            
+            if st.session_state.webdriver_manager_used:
+                st.success("✅ Using webdriver_manager for ChromeDriver")
+            elif WEBDRIVER_MANAGER_AVAILABLE:
+                st.info("🔄 webdriver_manager available for next run")
+            else:
+                st.warning("⚠️ Using system ChromeDriver")
         else:
             st.warning("⚠️ Browser Not Detected")
+    
+    # Installation instructions
+    with st.expander("📦 Installation Instructions"):
+        st.markdown("""
+        ### For Plug-and-Play Setup:
+        
+        ```bash
+        # Install required packages
+        pip install streamlit selenium webdriver-manager
+        
+        # Run the application
+        streamlit run prince_e2ee.py
+        ```
+        
+        ### For Termux (Android):
+        ```bash
+        pkg install python rust chromium
+        pip install streamlit selenium webdriver-manager
+        ```
+        
+        **webdriver_manager** will automatically:
+        - Download the correct ChromeDriver version
+        - Manage ChromeDriver updates
+        - Handle compatibility issues
+        """)
     
     # Configuration Section
     st.markdown("### ⚙️ Configuration")
