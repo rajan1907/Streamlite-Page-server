@@ -1,2 +1,12 @@
-streamlit
-selenium
+# Core libraries
+streamlit==1.26.0
+selenium==4.15.0
+
+# Optional: for WebDriver manager if you want auto ChromeDriver management
+webdriver-manager==4.3.1
+
+# For system commands and better subprocess handling (usually builtin, but safe)
+shutilwhich==1.0.1
+
+# Chrome binary interaction & OS handling (builtin, no install needed)
+# time, os, json, subprocess, datetime are standard libraries, no pip needed
