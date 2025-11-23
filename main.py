@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Facebook Messenger Bot - PRINCE E2EE STYLE 💯✅
-FULLY WORKING VERSION - EXACT SAME AS PRINCE'S WORKING CODE
+SIMPLE PLUG-AND-PLAY VERSION
 """
 
 import streamlit as st
@@ -20,28 +20,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 # ============================================
-# WEBDRIVER MANAGER FOR PLUG-AND-PLAY SETUP
+# SIMPLE PLUG-AND-PLAY SETUP
 # ============================================
 try:
     from webdriver_manager.chrome import ChromeDriverManager
     WEBDRIVER_MANAGER_AVAILABLE = True
 except ImportError:
     WEBDRIVER_MANAGER_AVAILABLE = False
-    st.warning("⚠️ webdriver_manager not installed. Run: pip install webdriver-manager")
-
-# ============================================
-# GLOBAL CONFIGURATION - PRINCE STYLE
-# ============================================
-# Multiple possible Chrome/Chromium paths for different environments
-POSSIBLE_CHROME_PATHS = [
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser", 
-    "/usr/bin/google-chrome",
-    "/usr/bin/chrome",
-    "/snap/bin/chromium",
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-]
 
 # ============================================
 # PAGE CONFIGURATION - PRINCE STYLE
@@ -116,17 +101,11 @@ def init_session_state():
         st.session_state.config = {}
     if 'driver' not in st.session_state:
         st.session_state.driver = None
-    if 'browser_found' not in st.session_state:
-        st.session_state.browser_found = False
-    if 'chrome_path' not in st.session_state:
-        st.session_state.chrome_path = None
-    if 'webdriver_manager_used' not in st.session_state:
-        st.session_state.webdriver_manager_used = False
 
 init_session_state()
 
 # ============================================
-# PRINCE STYLE FUNCTIONS - FULLY WORKING
+# PRINCE STYLE FUNCTIONS - SIMPLE & WORKING
 # ============================================
 
 def add_log(message, log_type="info"):
@@ -148,77 +127,10 @@ def add_log(message, log_type="info"):
     if len(st.session_state.logs) > 100:
         st.session_state.logs = st.session_state.logs[-100:]
 
-def find_chrome_binary():
-    """Find Chrome/Chromium binary in the system"""
-    add_log("🔍 Searching for Chrome/Chromium browser...")
-    
-    # First check if chrome is available in PATH
-    chrome_path = shutil.which("google-chrome") or shutil.which("chromium-browser") or shutil.which("chromium") or shutil.which("chrome")
-    if chrome_path:
-        add_log(f"✅ Found browser in PATH: {chrome_path}", "success")
-        return chrome_path
-    
-    # Check common installation paths
-    for path in POSSIBLE_CHROME_PATHS:
-        if os.path.exists(path):
-            add_log(f"✅ Found browser at: {path}", "success")
-            return path
-    
-    add_log("❌ Chrome/Chromium not found in system", "error")
-    return None
-
-def install_chromium():
-    """Install Chromium if not available"""
-    add_log("🔄 Attempting to install Chromium...")
+def setup_browser_simple():
+    """SIMPLE PLUG-AND-PLAY BROWSER SETUP"""
     try:
-        # Try different package managers
-        commands = [
-            ['apt-get', 'update'],
-            ['apt-get', 'install', '-y', 'chromium', 'chromium-driver'],
-            ['yum', 'install', '-y', 'chromium'],
-            ['dnf', 'install', '-y', 'chromium'],
-            ['pacman', '-Sy', '--noconfirm', 'chromium']
-        ]
-        
-        for cmd in commands:
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-                if result.returncode == 0:
-                    add_log(f"✅ Command succeeded: {' '.join(cmd)}", "success")
-                    break
-            except:
-                continue
-        
-        # Check if installation worked
-        chrome_path = find_chrome_binary()
-        if chrome_path:
-            add_log("✅ Chromium installed successfully!", "success")
-            return chrome_path
-        else:
-            add_log("❌ Chromium installation may have failed", "error")
-            return None
-            
-    except Exception as e:
-        add_log(f"❌ Installation failed: {str(e)}", "error")
-        return None
-
-def setup_browser_prince_style():
-    """Prince's exact browser setup - PLUG & PLAY VERSION"""
-    try:
-        add_log("Setting up Chrome browser...")
-        
-        # Find Chrome/Chromium binary
-        chrome_path = find_chrome_binary()
-        if not chrome_path:
-            add_log("❌ No Chrome/Chromium found. Attempting installation...", "warning")
-            chrome_path = install_chromium()
-            if not chrome_path:
-                add_log("❌ Could not find or install Chrome/Chromium", "error")
-                return None
-        
-        # Store path in session state
-        st.session_state.chrome_path = chrome_path
-        st.session_state.browser_found = True
+        add_log("🚀 Starting browser setup...")
         
         chrome_options = Options()
         chrome_options.add_argument('--headless=new')
@@ -231,34 +143,25 @@ def setup_browser_prince_style():
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
         
-        # Set Chrome binary location
-        chrome_options.binary_location = chrome_path
-        add_log(f"✅ Using Chrome binary: {chrome_path}", "success")
-
-        # PLUG-AND-PLAY CHROMEDRIVER SETUP USING WEBDRIVER_MANAGER
+        # SIMPLE PLUG-AND-PLAY USING WEBDRIVER_MANAGER
         if WEBDRIVER_MANAGER_AVAILABLE:
             try:
-                add_log("🔄 Setting up ChromeDriver using webdriver_manager...")
+                add_log("📥 Downloading ChromeDriver automatically...")
                 service = Service(ChromeDriverManager().install())
                 driver = webdriver.Chrome(service=service, options=chrome_options)
-                st.session_state.webdriver_manager_used = True
-                add_log("✅ ChromeDriver setup completed using webdriver_manager!", "success")
+                add_log("✅ ChromeDriver setup completed automatically!", "success")
             except Exception as e:
-                add_log(f"❌ webdriver_manager failed: {str(e)}", "error")
-                add_log("🔄 Falling back to system ChromeDriver...")
-                # Fallback to system chromedriver
-                service = Service()
-                driver = webdriver.Chrome(service=service, options=chrome_options)
+                add_log(f"❌ Automatic setup failed: {str(e)}", "error")
+                return None
         else:
-            add_log("🔄 Using system ChromeDriver...")
-            service = Service()
-            driver = webdriver.Chrome(service=service, options=chrome_options)
+            add_log("❌ webdriver_manager not available", "error")
+            add_log("💡 Run: pip install webdriver-manager", "warning")
+            return None
         
-        # Execute script to remove webdriver property
+        # Remove webdriver property
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
-        add_log("✅ Chrome started successfully!", "success")
-        add_log("✅ Chrome browser setup completed successfully!", "success")
+        add_log("✅ Browser setup completed successfully!", "success")
         return driver
         
     except Exception as e:
@@ -267,9 +170,7 @@ def setup_browser_prince_style():
 
 def find_message_input_prince_style(driver):
     """Prince's 12 selector approach - FULLY WORKING"""
-    add_log("Finding message input...")
-    add_log(f"Page Title: {driver.title}")
-    add_log(f"Page URL: {driver.current_url}")
+    add_log("🔍 Finding message input...")
     
     # PRINCE'S 12 SELECTORS (exact same working selectors)
     SELECTORS = [
@@ -287,145 +188,107 @@ def find_message_input_prince_style(driver):
         'div[aria-label*="type" i]'
     ]
     
-    add_log(f"Trying {len(SELECTORS)} selectors...")
-    
     for i, selector in enumerate(SELECTORS, 1):
         try:
             elements = driver.find_elements(By.CSS_SELECTOR, selector)
-            add_log(f'Selector {i}/12 "{selector}" found {len(elements)} elements')
             
             for element in elements:
                 try:
                     if element.is_displayed() and element.is_enabled():
-                        add_log(f"✅ Found editable element with selector #{i}", "success")
-                        
-                        # Get text like Prince
-                        try:
-                            text = element.text or element.get_attribute('aria-label') or element.get_attribute('placeholder') or 'message'
-                            add_log(f"✅ Found message input with text: {text}", "success")
-                            return element
-                        except:
-                            add_log("✅ Found message input", "success")
-                            return element
+                        add_log(f"✅ Found input with selector #{i}", "success")
+                        return element
                 except:
                     continue
-        except Exception as e:
-            add_log(f"Selector {i} failed: {str(e)}")
+        except:
             continue
     
-    add_log("❌ No message input found with selectors", "error")
+    add_log("❌ No message input found", "error")
     return None
 
 def send_message_prince_style(driver, message):
     """Prince's exact sending method - FULLY WORKING"""
     try:
-        add_log(f"Attempting to send message: {message[:50]}...")
+        add_log(f"📤 Sending message: {message[:50]}...")
         
         input_field = find_message_input_prince_style(driver)
         if not input_field:
-            add_log("❌ No input field found", "error")
             return False
         
-        # Click and focus - Prince's method
+        # Click and focus
         try:
             driver.execute_script("arguments[0].click();", input_field)
-            add_log("✅ Clicked input field via JavaScript")
             time.sleep(2)
         except:
             try:
                 input_field.click()
-                add_log("✅ Clicked input field directly")
                 time.sleep(2)
-            except Exception as e:
-                add_log(f"❌ Click failed: {str(e)}", "error")
+            except:
                 return False
         
-        # Clear input - Prince's method
+        # Clear input
         try:
             driver.execute_script("arguments[0].textContent = '';", input_field)
-            add_log("✅ Cleared input field")
             time.sleep(1)
-        except Exception as e:
-            add_log(f"⚠️ Clear failed: {str(e)}", "warning")
+        except:
+            pass
         
-        # Type message - Prince's method
+        # Type message
         try:
             input_field.send_keys(message)
-            add_log("✅ Typed message into input field")
             time.sleep(2)
-        except Exception as e:
-            add_log(f"❌ Typing failed: {str(e)}", "error")
+        except:
             return False
         
-        # Find send button (Prince's working method)
+        # Find send button
         send_selectors = [
             'div[role="button"][aria-label="Send"]',
             'div[aria-label="Send"]',
             'button[aria-label="Send"]',
-            'svg[aria-label="Send"]',
             'div[data-testid="mf-message-send-button"]',
-            'div[tabindex="0"][role="button"]:last-child'
         ]
-        
-        add_log("Looking for send button...")
         
         for selector in send_selectors:
             try:
                 buttons = driver.find_elements(By.CSS_SELECTOR, selector)
-                add_log(f"Send selector '{selector}' found {len(buttons)} elements")
-                
                 for btn in buttons:
                     try:
                         if btn.is_displayed() and btn.is_enabled():
                             driver.execute_script("arguments[0].click();", btn)
-                            add_log("✅ Send button clicked successfully!", "success")
+                            add_log("✅ Message sent successfully!", "success")
                             time.sleep(2)
                             return True
                     except:
                         continue
-            except Exception as e:
-                add_log(f"Send selector {selector} failed: {str(e)}")
+            except:
                 continue
         
-        # Alternative: Press Enter key
+        # Press Enter key as fallback
         try:
-            add_log("Trying Enter key as alternative...")
             input_field.send_keys(Keys.ENTER)
-            add_log("✅ Enter key pressed", "success")
+            add_log("✅ Message sent with Enter key!", "success")
             time.sleep(2)
             return True
-        except Exception as e:
-            add_log(f"❌ Enter key failed: {str(e)}", "error")
+        except:
+            pass
         
-        add_log("❌ No send method worked", "error")
         return False
         
     except Exception as e:
-        add_log(f"❌ Error sending message: {str(e)}", "error")
+        add_log(f"❌ Send failed: {str(e)}", "error")
         return False
 
-def wait_for_element(driver, selector, timeout=30):
-    """Wait for element to be present"""
-    try:
-        element = WebDriverWait(driver, timeout).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-        )
-        return element
-    except:
-        return None
-
 # ============================================
-# MAIN AUTOMATION FLOW - PRINCE STYLE FULLY WORKING
+# MAIN AUTOMATION FLOW - SIMPLE & WORKING
 # ============================================
 
 def run_automation():
-    """Main automation like Prince - FULLY WORKING"""
+    """Main automation - SIMPLE VERSION"""
     if not st.session_state.is_running:
         return
     
     # Setup browser if not already setup
     if st.session_state.driver is None:
-        driver = setup_browser_prince_style()
+        driver = setup_browser_simple()
         if not driver:
             st.session_state.is_running = False
             return
@@ -435,11 +298,11 @@ def run_automation():
     
     try:
         # Navigate to Facebook
-        add_log("🌐 Navigating to Facebook...")
+        add_log("🌐 Opening Facebook...")
         driver.get("https://www.facebook.com")
         time.sleep(5)
         
-        # Add cookies (Prince style)
+        # Add cookies
         add_log("🍪 Adding cookies...")
         cookies = st.session_state.config['cookies_str']
         cookie_pairs = cookies.split(';')
@@ -458,8 +321,8 @@ def run_automation():
                         'secure': True
                     })
                     cookies_added += 1
-                except Exception as e:
-                    add_log(f"⚠️ Failed to add cookie {key}: {str(e)}", "warning")
+                except:
+                    continue
         
         add_log(f"✅ Added {cookies_added} cookies", "success")
         
@@ -468,26 +331,19 @@ def run_automation():
         thread_url = f"https://www.facebook.com/messages/e2ee/t/{thread_id}"
         
         add_log(f"💬 Opening conversation {thread_id}...")
-        add_log(f"🔗 Trying URL: {thread_url}")
-        
         driver.get(thread_url)
         time.sleep(10)
         
         current_url = driver.current_url
-        add_log(f"🌐 Conversation loaded with: {current_url}")
+        add_log(f"🔗 Current URL: {current_url}")
         
         if "login" in current_url.lower():
             add_log("❌ Login page detected! Cookies expired.", "error")
             st.session_state.is_running = False
             return
         
-        # Wait for chat to load
-        add_log("⏳ Waiting for chat to load...")
-        time.sleep(5)
-        
-        # Check if we're in the right conversation
         if thread_id not in current_url:
-            add_log("❌ Wrong conversation loaded!", "error")
+            add_log("❌ Wrong conversation!", "error")
             st.session_state.is_running = False
             return
         
@@ -497,22 +353,20 @@ def run_automation():
         messages = st.session_state.config['message_list']
         total_messages = len(messages)
         
-        add_log(f"📤 Starting to send {total_messages} messages...")
+        add_log(f"📨 Starting to send {total_messages} messages...")
         
         for i, message in enumerate(messages, 1):
             if not st.session_state.is_running:
                 break
                 
-            add_log(f"📝 Processing message {i}/{total_messages}")
+            add_log(f"📝 Message {i}/{total_messages}: {message[:30]}...")
             
             if send_message_prince_style(driver, message):
                 st.session_state.messages_sent += 1
-                add_log(f"✅ Message {i} sent successfully: {message[:30]}...", "success")
                 
-                # Wait between messages (Prince style)
+                # Wait between messages
                 if i < total_messages:
-                    add_log(f"⏳ Waiting 5 seconds before next message...")
-                    time.sleep(5)
+                    time.sleep(3)
             else:
                 add_log(f"❌ Failed to send message {i}", "error")
                 continue
@@ -532,6 +386,10 @@ def run_automation():
 
 def start_automation(cookies, messages, thread_id):
     """Start automation"""
+    if not WEBDRIVER_MANAGER_AVAILABLE:
+        st.error("❌ Please install: pip install webdriver-manager")
+        return
+        
     st.session_state.is_running = True
     st.session_state.messages_sent = 0
     st.session_state.config = {
@@ -540,16 +398,14 @@ def start_automation(cookies, messages, thread_id):
         'message_list': [msg.strip() for msg in messages.split('\n') if msg.strip()]
     }
     add_log("🚀 Starting automation...", "success")
-    add_log(f"🎯 Target: E2EE Thread {thread_id}", "success")
-    add_log(f"📨 Messages to send: {len(st.session_state.config['message_list'])}", "success")
 
 def stop_automation():
     """Stop automation"""
     st.session_state.is_running = False
-    add_log("🛑 Automation stopped by user", "warning")
+    add_log("🛑 Automation stopped", "warning")
 
 # ============================================
-# PRINCE STYLE UI - FULLY WORKING
+# SIMPLE UI - PRINCE STYLE
 # ============================================
 
 def main():
@@ -558,86 +414,26 @@ def main():
     <div class="main-header">
         <h1>👤 Prince E2EE</h1>
         <p>PRINCE E2EE - Facebook Automation Tool</p>
-        <p><small>Created by Prince Malhotra</small></p>
+        <p><small>Simple Plug-and-Play Version</small></p>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("📱 **Contact Developer on Facebook**")
-    
-    # Browser Status
-    st.markdown("### 🌐 Browser Status")
-    
+    # Installation Alert
     if not WEBDRIVER_MANAGER_AVAILABLE:
         st.error("""
-        ❌ **webdriver_manager not installed!**
+        ## ❌ Missing Dependency!
         
-        For plug-and-play setup, install it with:
+        Please install webdriver-manager first:
         ```bash
         pip install webdriver-manager
         ```
         
-        This will automatically handle ChromeDriver installation and version management.
+        This will automatically handle ChromeDriver installation.
         """)
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("🔍 Detect Browser", use_container_width=True):
-            chrome_path = find_chrome_binary()
-            
-            if chrome_path:
-                st.session_state.browser_found = True
-                st.session_state.chrome_path = chrome_path
-                st.success(f"✅ Chrome found: {chrome_path}")
-                
-                if WEBDRIVER_MANAGER_AVAILABLE:
-                    st.success("✅ webdriver_manager ready for automatic ChromeDriver setup!")
-                else:
-                    st.warning("⚠️ Install webdriver_manager for automatic ChromeDriver management")
-            else:
-                st.error("❌ Browser not found")
-    
-    with col2:
-        if st.session_state.browser_found:
-            st.success("✅ Browser Ready")
-            st.info(f"Chrome: {st.session_state.chrome_path}")
-            
-            if st.session_state.webdriver_manager_used:
-                st.success("✅ Using webdriver_manager for ChromeDriver")
-            elif WEBDRIVER_MANAGER_AVAILABLE:
-                st.info("🔄 webdriver_manager available for next run")
-            else:
-                st.warning("⚠️ Using system ChromeDriver")
-        else:
-            st.warning("⚠️ Browser Not Detected")
-    
-    # Installation instructions
-    with st.expander("📦 Installation Instructions"):
-        st.markdown("""
-        ### For Plug-and-Play Setup:
-        
-        ```bash
-        # Install required packages
-        pip install streamlit selenium webdriver-manager
-        
-        # Run the application
-        streamlit run prince_e2ee.py
-        ```
-        
-        ### For Termux (Android):
-        ```bash
-        pkg install python rust chromium
-        pip install streamlit selenium webdriver-manager
-        ```
-        
-        **webdriver_manager** will automatically:
-        - Download the correct ChromeDriver version
-        - Manage ChromeDriver updates
-        - Handle compatibility issues
-        """)
-    
-    # Configuration Section
+    # Simple Configuration
     st.markdown("### ⚙️ Configuration")
+    
     with st.form("prince_form"):
         thread_id = st.text_input(
             "💬 Thread ID",
@@ -649,16 +445,15 @@ def main():
         messages = st.text_area(
             "📝 Messages (one per line)",
             height=120,
-            value="Testing by devil e2ee server",
-            help="Each line = One message. Messages will be sent sequentially.",
-            placeholder="Type your first message here\nSecond message here\nThird message here"
+            value="Hello from Prince E2EE!",
+            help="Each line = One message"
         )
         
         cookies = st.text_area(
             "🍪 Facebook Cookies",
             height=100,
             placeholder="c_user=123...; xs=abc...; fr=def...; datr=xyz...",
-            help="Copy cookies from browser dev tools (Application > Cookies > https://www.facebook.com)"
+            help="Copy cookies from browser dev tools"
         )
         
         col1, col2 = st.columns(2)
@@ -672,24 +467,21 @@ def main():
         
         if start_btn:
             if all([thread_id.strip(), messages.strip(), cookies.strip()]):
-                if st.session_state.browser_found or find_chrome_binary():
-                    start_automation(cookies, messages, thread_id)
-                else:
-                    st.error("❌ Please detect browser first using the 'Detect Browser' button!")
+                start_automation(cookies, messages, thread_id)
             else:
-                st.error("❌ Please fill all fields completely!")
+                st.error("❌ Please fill all fields!")
     
-    # Automation Stats - Prince Style
-    st.markdown("### 📊 Automation Status")
+    # Status
+    st.markdown("### 📊 Status")
     
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        status_color = "🟢" if st.session_state.is_running else "🔴"
+        status = "🟢 Running" if st.session_state.is_running else "🔴 Stopped"
         st.markdown(f"""
         <div class="stats-card">
             <h3>Status</h3>
-            <h4>{status_color} {"Running" if st.session_state.is_running else "Stopped"}</h4>
+            <h4>{status}</h4>
         </div>
         """, unsafe_allow_html=True)
     
@@ -709,16 +501,7 @@ def main():
         </div>
         """, unsafe_allow_html=True)
     
-    with col4:
-        pending = len(st.session_state.config.get('message_list', [])) - st.session_state.messages_sent if st.session_state.is_running else 0
-        st.markdown(f"""
-        <div class="stats-card">
-            <h3>Pending</h3>
-            <h2>{pending}</h2>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Manual stop button
+    # Emergency stop
     if st.session_state.is_running:
         if st.button("🛑 EMERGENCY STOP", type="primary", use_container_width=True):
             stop_automation()
@@ -727,17 +510,16 @@ def main():
     # Live Logs
     st.markdown("### 📋 Live Logs")
     
-    # Auto-refresh checkbox
     auto_refresh = st.checkbox("🔄 Auto-refresh logs", value=True)
     
     if st.session_state.logs:
         log_html = '<div class="log-container">'
-        for log in st.session_state.logs[-30:]:
+        for log in st.session_state.logs[-20:]:
             if "✅" in log:
                 log_html += f'<div class="success-log">{log}</div>'
-            elif "❌" in log or "ERROR" in log.upper():
+            elif "❌" in log:
                 log_html += f'<div class="error-log">{log}</div>'
-            elif "⚠️" in log or "WARNING" in log.upper():
+            elif "⚠️" in log:
                 log_html += f'<div class="warning-log">{log}</div>'
             else:
                 log_html += f'<div style="margin: 2px 0; color: #00ff00;">{log}</div>'
@@ -752,21 +534,20 @@ def main():
         </div>
         """, unsafe_allow_html=True)
     
-    # Clear logs button
+    # Clear logs
     if st.button("🗑️ Clear Logs", use_container_width=True):
         st.session_state.logs = []
         st.session_state.total_logs = 0
         st.rerun()
     
-    # Footer - Prince Style
+    # Footer
     st.markdown("""
     <div class="footer">
         <p>Made with ❤️ by Prince Malhotra | © 2025 All Rights Reserved</p>
-        <p>📱 Contact on Facebook for support</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Run automation in background
+    # Run automation
     if st.session_state.is_running:
         run_automation()
         if auto_refresh:
