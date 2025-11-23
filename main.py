@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Facebook Messenger Bot - PRINCE E2EE STYLE 💯✅
-FULLY WORKING VERSION - EXACT SAME AS PRINCE'S WORKING CODE
+FULLY WORKING VERSION FOR STREAMLIT COMMUNITY CLOUD DEPLOYMENT
 """
 
 import streamlit as st
@@ -17,17 +17,13 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-# New import for automatic driver management
-from webdriver_manager.chrome import ChromeDriverManager 
 
 # ============================================
 # GLOBAL CONFIGURATION - PRINCE STYLE
-# NOTE: Hardcoded paths are removed and replaced 
-# with automatic driver management for portability.
+# NOTE: Using Streamlit Cloud's default paths for Chromium
 # ============================================
-# CHROME_PATH = "/usr/bin/chromium"
-# CHROMEDRIVER_PATH = "/usr/bin/chromedriver"
-
+CHROME_PATH = "/usr/bin/chromium"
+CHROMEDRIVER_PATH = "/usr/lib/chromium-browser/chromedriver" # Standard path on Streamlit Cloud
 
 # ============================================
 # PAGE CONFIGURATION - PRINCE STYLE
@@ -129,13 +125,12 @@ def add_log(message, log_type="info"):
         st.session_state.logs = st.session_state.logs[-100:]
 
 def setup_browser_prince_style():
-    """Uses webdriver-manager for automatic ChromeDriver setup"""
+    """Prince's exact browser setup, configured for Streamlit Cloud paths"""
     try:
-        add_log("Setting up Chrome browser...")
+        add_log("Setting up Chrome browser for Streamlit Cloud deployment...")
         
         chrome_options = Options()
-        # Ensure 'new' is used for modern headless mode
-        chrome_options.add_argument('--headless=new') 
+        chrome_options.add_argument('--headless=new')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
@@ -145,24 +140,32 @@ def setup_browser_prince_style():
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
         
-        # --- FIX: Use ChromeDriverManager for automatic path finding ---
-        add_log("Automatically downloading/managing ChromeDriver...")
-        driver_path = ChromeDriverManager().install()
-        service = Service(executable_path=driver_path)
-        # -----------------------------------------------------------------
+        # --- Streamlit Cloud Path Configuration ---
+        if os.path.exists(CHROME_PATH):
+            chrome_options.binary_location = CHROME_PATH
+            add_log(f"Found Chromium binary at: {CHROME_PATH}", "success")
+        else:
+            add_log(f"Chromium binary not found at {CHROME_PATH}. Ensure 'packages.txt' is correct.", "error")
+            return None
+
+        if not os.path.exists(CHROMEDRIVER_PATH):
+            add_log(f"ChromeDriver not found at {CHROMEDRIVER_PATH}. Ensure 'packages.txt' is correct.", "error")
+            return None
         
+        service = Service(executable_path=CHROMEDRIVER_PATH)
+        # --- End Streamlit Cloud Path Configuration ---
+
         driver = webdriver.Chrome(service=service, options=chrome_options)
         
         # Execute script to remove webdriver property
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
-        add_log("Chrome started with managed ChromeDriver!", "success")
-        add_log("Chrome browser setup completed successfully!", "success")
+        add_log("Chrome started successfully using Streamlit Cloud paths!", "success")
         return driver
         
     except Exception as e:
         add_log(f"Browser setup failed: {str(e)}", "error")
-        add_log("Ensure you have **Google Chrome** or **Chromium** installed on your system.", "error")
+        add_log("Deployment error. Check Streamlit app logs for missing dependencies.", "error")
         return None
 
 def find_message_input_prince_style(driver):
@@ -350,8 +353,6 @@ def run_automation():
             if '=' in pair:
                 key, value = pair.split('=', 1)
                 try:
-                    # NOTE: Domain should be handled carefully for cross-domain cookies, 
-                    # but '.facebook.com' is typically correct for main FB cookies.
                     driver.add_cookie({
                         'name': key.strip(),
                         'value': value.strip(),
@@ -390,8 +391,7 @@ def run_automation():
         # Check if we're in the right conversation
         if thread_id not in current_url:
             add_log("Wrong conversation loaded or redirect failed!", "error")
-            # Log the current URL for better debugging
-            add_log(f"Current final URL: {current_url}", "warning") 
+            add_log(f"Current final URL: {current_url}", "warning")
             st.session_state.is_running = False
             return
         
@@ -426,6 +426,7 @@ def run_automation():
     except Exception as e:
         add_log(f"Automation error: {str(e)}", "error")
     finally:
+        # Check if the process is explicitly stopped by the user or finished
         if st.session_state.driver and not st.session_state.is_running:
             try:
                 st.session_state.driver.quit()
@@ -433,6 +434,7 @@ def run_automation():
             except:
                 pass
             st.session_state.driver = None
+        # If running, do not quit the driver, let st.rerun handle the next step
 
 def start_automation(cookies, messages, thread_id):
     """Start automation"""
@@ -443,6 +445,7 @@ def start_automation(cookies, messages, thread_id):
         'thread_id': thread_id,
         'message_list': [msg.strip() for msg in messages.split('\n') if msg.strip()]
     }
+    st.session_state.logs = [] # Clear logs on start
     add_log("🚀 Starting automation...", "success")
     add_log(f"Target: E2EE Thread {thread_id}", "success")
     add_log(f"Messages to send: {len(st.session_state.config['message_list'])}", "success")
