@@ -25,14 +25,14 @@ st.set_page_config(
 
 custom_css = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap');
     
     * {
         font-family: 'Poppins', sans-serif;
     }
     
     .stApp {
-        background-image: url('https://i.postimg.cc/TYhXd0gG/d0a72a8cea5ae4978b21e04a74f0b0ee.jpg');
+        background: linear-gradient(135deg, #ffffff 0%, #ffe6f2 50%, #ffccff 100%);
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -40,239 +40,325 @@ custom_css = """
     }
     
     .main .block-container {
-        background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(8px);
-        border-radius: 12px;
-        padding: 25px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 8px 32px rgba(255, 105, 180, 0.2);
+        border: 2px solid rgba(255, 182, 193, 0.3);
+        margin-top: 20px;
+        margin-bottom: 20px;
     }
     
     .main-header {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        padding: 2rem;
-        border-radius: 15px;
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff1493 50%, #dc143c 100%);
+        padding: 3rem 2rem;
+        border-radius: 25px;
         text-align: center;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        margin-bottom: 3rem;
+        box-shadow: 0 15px 40px rgba(255, 20, 147, 0.3);
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .main-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+        animation: shine 3s infinite;
+    }
+    
+    @keyframes shine {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
     }
     
     .main-header h1 {
-        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-size: 2.5rem;
-        font-weight: 700;
+        color: white;
+        font-size: 3.5rem;
+        font-weight: 800;
         margin: 0;
+        text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
+        letter-spacing: 1px;
     }
     
     .main-header p {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1.1rem;
-        margin-top: 0.5rem;
-    }
-    
-    .raj-logo {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        margin-bottom: 15px;
-        border: 3px solid #ff6b6b;
-        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.5);
+        color: rgba(255, 255, 255, 0.95);
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-top: 1rem;
+        text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
     }
     
     .stButton>button {
-        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff1493 100%);
         color: white;
         border: none;
-        border-radius: 10px;
-        padding: 0.75rem 2rem;
-        font-weight: 600;
-        font-size: 1rem;
+        border-radius: 15px;
+        padding: 1rem 2.5rem;
+        font-weight: 700;
+        font-size: 1.1rem;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 20px rgba(255, 20, 147, 0.4);
         width: 100%;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
     .stButton>button:hover {
-        opacity: 0.9;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(255, 20, 147, 0.6);
+        background: linear-gradient(135deg, #ff1493 0%, #dc143c 100%);
     }
     
     .stTextInput>div>div>input, 
     .stTextArea>div>div>textarea, 
     .stNumberInput>div>div>input {
-        background: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.25);
-        border-radius: 8px;
-        color: white;
-        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid #ffb6c1;
+        border-radius: 12px;
+        color: #333;
+        padding: 1rem;
+        font-weight: 500;
+        font-size: 1rem;
         transition: all 0.3s ease;
-    }
-    
-    .stTextInput>div>div>input::placeholder,
-    .stTextArea>div>div>textarea::placeholder {
-        color: rgba(255, 255, 255, 0.6);
     }
     
     .stTextInput>div>div>input:focus, 
     .stTextArea>div>div>textarea:focus {
-        background: rgba(255, 255, 255, 0.2);
-        border-color: #4ecdc4;
-        box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2);
-        color: white;
+        background: rgba(255, 255, 255, 1);
+        border-color: #ff1493;
+        box-shadow: 0 0 0 3px rgba(255, 20, 147, 0.1);
+        color: #333;
     }
     
     label {
-        color: white !important;
-        font-weight: 500 !important;
-        font-size: 14px !important;
+        color: #ff1493 !important;
+        font-weight: 700 !important;
+        font-size: 1rem !important;
+        margin-bottom: 8px !important;
     }
     
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background: rgba(255, 255, 255, 0.06);
-        padding: 10px;
-        border-radius: 10px;
+        gap: 10px;
+        background: rgba(255, 182, 193, 0.2);
+        padding: 15px;
+        border-radius: 15px;
+        border: 2px solid rgba(255, 105, 180, 0.2);
     }
     
     .stTabs [data-baseweb="tab"] {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        color: white;
-        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 12px;
+        color: #ff1493;
+        padding: 12px 25px;
+        font-weight: 600;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff1493 100%);
+        color: white;
+        border-color: #ff1493;
+        box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3);
     }
     
     [data-testid="stMetricValue"] {
-        color: #4ecdc4;
-        font-weight: 700;
-        font-size: 1.8rem;
+        color: #ff1493;
+        font-weight: 800;
+        font-size: 2.2rem;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
     }
     
     [data-testid="stMetricLabel"] {
-        color: rgba(255, 255, 255, 0.9);
-        font-weight: 500;
+        color: #ff6b9d;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+    
+    .metric-container {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 15px;
+        border: 2px solid #ffb6c1;
+        box-shadow: 0 4px 15px rgba(255, 105, 180, 0.1);
     }
     
     .console-section {
-        margin-top: 20px;
-        padding: 15px;
-        background: rgba(255, 255, 255, 0.06);
-        border-radius: 10px;
-        border: 1px solid rgba(78, 205, 196, 0.3);
+        margin-top: 25px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        border: 2px solid #ff1493;
+        box-shadow: 0 4px 20px rgba(255, 20, 147, 0.1);
     }
     
     .console-header {
-        color: #4ecdc4;
-        text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        color: #ff1493;
+        font-weight: 800;
+        font-size: 1.5rem;
         margin-bottom: 20px;
-        font-weight: 600;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     
     .console-output {
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(78, 205, 196, 0.4);
-        border-radius: 10px;
-        padding: 12px;
+        background: #1a1a1a;
+        border: 2px solid #ff1493;
+        border-radius: 12px;
+        padding: 15px;
         font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
-        font-size: 12px;
+        font-size: 13px;
         color: #00ff88;
-        line-height: 1.6;
-        max-height: 400px;
+        line-height: 1.7;
+        max-height: 500px;
         overflow-y: auto;
         scrollbar-width: thin;
-        scrollbar-color: rgba(78, 205, 196, 0.5) rgba(0, 0, 0, 0.2);
+        scrollbar-color: #ff1493 #333;
     }
     
     .console-output::-webkit-scrollbar {
-        width: 8px;
+        width: 10px;
     }
     
     .console-output::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.2);
+        background: #333;
+        border-radius: 5px;
     }
     
     .console-output::-webkit-scrollbar-thumb {
-        background: rgba(78, 205, 196, 0.5);
-        border-radius: 4px;
+        background: #ff1493;
+        border-radius: 5px;
     }
     
     .console-output::-webkit-scrollbar-thumb:hover {
-        background: rgba(78, 205, 196, 0.7);
+        background: #ff6b9d;
     }
     
     .console-line {
-        margin-bottom: 3px;
+        margin-bottom: 5px;
         word-wrap: break-word;
-        padding: 6px 10px;
-        padding-left: 28px;
+        padding: 8px 12px;
+        padding-left: 35px;
         color: #00ff88;
-        background: rgba(78, 205, 196, 0.08);
-        border-left: 2px solid rgba(78, 205, 196, 0.4);
+        background: rgba(255, 20, 147, 0.05);
+        border-left: 3px solid #ff1493;
         position: relative;
+        border-radius: 5px;
     }
     
     .console-line::before {
-        content: '►';
+        content: '▶';
         position: absolute;
-        left: 10px;
-        opacity: 0.6;
-        color: #4ecdc4;
+        left: 12px;
+        color: #ff1493;
+        font-weight: bold;
     }
     
     .success-box {
         background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-        padding: 1rem;
-        border-radius: 10px;
+        padding: 1.5rem;
+        border-radius: 15px;
         color: white;
         text-align: center;
         margin: 1rem 0;
+        font-weight: 700;
+        font-size: 1.1rem;
+        border: 2px solid rgba(255, 255, 255, 0.3);
     }
     
     .error-box {
         background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        padding: 1rem;
-        border-radius: 10px;
+        padding: 1.5rem;
+        border-radius: 15px;
         color: white;
         text-align: center;
         margin: 1rem 0;
+        font-weight: 700;
+        font-size: 1.1rem;
+        border: 2px solid rgba(255, 255, 255, 0.3);
     }
     
     .info-card {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
-        padding: 1.5rem;
-        border-radius: 15px;
-        margin: 1rem 0;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 2rem;
+        border-radius: 20px;
+        margin: 1.5rem 0;
+        border: 2px solid #ffb6c1;
+        box-shadow: 0 8px 25px rgba(255, 105, 180, 0.15);
     }
     
     .footer {
         text-align: center;
-        padding: 2rem;
-        color: rgba(255, 255, 255, 0.7);
-        font-weight: 600;
-        margin-top: 3rem;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 2.5rem;
+        color: #ff1493;
+        font-weight: 800;
+        font-size: 1.1rem;
+        margin-top: 4rem;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 20px;
+        border-top: 3px solid #ff1493;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     
     [data-testid="stSidebar"] {
-        background: rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(10px);
+        background: linear-gradient(180deg, #ffffff 0%, #ffe6f2 100%);
+        border-right: 3px solid #ff1493;
     }
     
     [data-testid="stSidebar"] .element-container {
+        color: #ff1493;
+    }
+    
+    .sidebar-header {
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff1493 100%);
+        padding: 2rem 1rem;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 2rem;
         color: white;
+        font-weight: 800;
+        font-size: 1.3rem;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    
+    .brand-highlight {
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff1493 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 800;
+    }
+    
+    .section-title {
+        color: #ff1493;
+        font-weight: 800;
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 3px solid #ffb6c1;
+        padding-bottom: 0.5rem;
+    }
+    
+    .status-running {
+        color: #00ff00;
+        font-weight: 800;
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    }
+    
+    .status-stopped {
+        color: #ff4444;
+        font-weight: 800;
     }
 </style>
 """
@@ -910,20 +996,19 @@ def stop_automation(user_id):
 def login_page():
     st.markdown("""
     <div class="main-header">
-        <img src="https://i.postimg.cc/Pq1HGqZK/459c85fcaa5d9f0762479bf382225ac6.jpg" class="raj-logo">
-        <h1>🔥 R4J M1SHR4 OFFLINE E2EE 🔥</h1>
-        <p>Premium Facebook Message Automation Tool</p>
+        <h1>🔥 R4J M1SHR4 🔥</h1>
+        <p>PREMIUM FACEBOOK MESSAGE AUTOMATION TOOL</p>
     </div>
     """, unsafe_allow_html=True)
     
-    tab1, tab2 = st.tabs(["🔐 Login", "✨ Sign Up"])
+    tab1, tab2 = st.tabs(["🔐 LOGIN", "✨ SIGN UP"])
     
     with tab1:
-        st.markdown("### Welcome Back!")
-        username = st.text_input("Username", key="login_username", placeholder="Enter your username")
-        password = st.text_input("Password", key="login_password", type="password", placeholder="Enter your password")
+        st.markdown("### WELCOME BACK!")
+        username = st.text_input("USERNAME", key="login_username", placeholder="Enter your username")
+        password = st.text_input("PASSWORD", key="login_password", type="password", placeholder="Enter your password")
         
-        if st.button("Login", key="login_btn", use_container_width=True):
+        if st.button("LOGIN", key="login_btn", use_container_width=True):
             if username and password:
                 user_id = db.verify_user(username, password)
                 if user_id:
@@ -937,34 +1022,39 @@ def login_page():
                         if user_config and user_config['chat_id']:
                             start_automation(user_config, user_id)
                     
-                    st.success(f"✅ Welcome back, {username}!")
+                    st.success(f"✅ WELCOME BACK, {username.upper()}!")
                     st.rerun()
                 else:
-                    st.error("❌ Invalid username or password!")
+                    st.error("❌ INVALID USERNAME OR PASSWORD!")
             else:
-                st.warning("⚠️ Please enter both username and password")
+                st.warning("⚠️ PLEASE ENTER BOTH USERNAME AND PASSWORD")
     
     with tab2:
-        st.markdown("### Create New Account")
-        new_username = st.text_input("Choose Username", key="signup_username", placeholder="Choose a unique username")
-        new_password = st.text_input("Choose Password", key="signup_password", type="password", placeholder="Create a strong password")
-        confirm_password = st.text_input("Confirm Password", key="confirm_password", type="password", placeholder="Re-enter your password")
+        st.markdown("### CREATE NEW ACCOUNT")
+        new_username = st.text_input("CHOOSE USERNAME", key="signup_username", placeholder="Choose a unique username")
+        new_password = st.text_input("CHOOSE PASSWORD", key="signup_password", type="password", placeholder="Create a strong password")
+        confirm_password = st.text_input("CONFIRM PASSWORD", key="confirm_password", type="password", placeholder="Re-enter your password")
         
-        if st.button("Create Account", key="signup_btn", use_container_width=True):
+        if st.button("CREATE ACCOUNT", key="signup_btn", use_container_width=True):
             if new_username and new_password and confirm_password:
                 if new_password == confirm_password:
                     success, message = db.create_user(new_username, new_password)
                     if success:
-                        st.success(f"✅ {message} Please login now!")
+                        st.success(f"✅ {message} PLEASE LOGIN NOW!")
                     else:
                         st.error(f"❌ {message}")
                 else:
-                    st.error("❌ Passwords do not match!")
+                    st.error("❌ PASSWORDS DO NOT MATCH!")
             else:
-                st.warning("⚠️ Please fill all fields")
+                st.warning("⚠️ PLEASE FILL ALL FIELDS")
 
 def main_app():
-    st.markdown('<div class="main-header"><img src="https://i.postimg.cc/Pq1HGqZK/459c85fcaa5d9f0762479bf382225ac6.jpg" class="raj-logo"><h1>🔥 R4J M1SHR4 OFFLINE E2EE 🔥</h1><p>Premium Facebook Message Automation Tool</p></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="main-header">
+        <h1>🔥 R4J M1SHR4 🔥</h1>
+        <p>PREMIUM FACEBOOK MESSAGE AUTOMATION TOOL</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     if not st.session_state.auto_start_checked and st.session_state.user_id:
         st.session_state.auto_start_checked = True
@@ -974,11 +1064,12 @@ def main_app():
             if user_config and user_config['chat_id']:
                 start_automation(user_config, st.session_state.user_id)
     
-    st.sidebar.markdown(f"### 👤 {st.session_state.username}")
-    st.sidebar.markdown(f"**User ID:** {st.session_state.user_id}")
-    st.sidebar.success("✅ Premium Access")
+    st.sidebar.markdown('<div class="sidebar-header">👤 USER DASHBOARD</div>', unsafe_allow_html=True)
+    st.sidebar.markdown(f"**USERNAME:** {st.session_state.username}")
+    st.sidebar.markdown(f"**USER ID:** {st.session_state.user_id}")
+    st.sidebar.markdown('<div class="success-box">✅ PREMIUM ACCESS</div>', unsafe_allow_html=True)
     
-    if st.sidebar.button("🚪 Logout", use_container_width=True):
+    if st.sidebar.button("🚪 LOGOUT", use_container_width=True):
         if st.session_state.automation_state.running:
             stop_automation(st.session_state.user_id)
         
@@ -992,36 +1083,40 @@ def main_app():
     user_config = db.get_user_config(st.session_state.user_id)
     
     if user_config:
-        tab1, tab2 = st.tabs(["⚙️ Configuration", "🚀 Automation"])
+        tab1, tab2 = st.tabs(["⚙️ CONFIGURATION", "🚀 AUTOMATION"])
         
         with tab1:
-            st.markdown("### Your Configuration")
+            st.markdown('<div class="section-title">⚙️ CONFIGURATION SETTINGS</div>', unsafe_allow_html=True)
             
-            chat_id = st.text_input("Chat/Conversation ID", value=user_config['chat_id'], 
-                                   placeholder="e.g., 1362400298935018",
-                                   help="Facebook conversation ID from the URL")
+            col1, col2 = st.columns(2)
             
-            name_prefix = st.text_input("Name Prefix", value=user_config['name_prefix'],
-                                       placeholder="e.g., [R4J M1SHR4]",
-                                       help="Prefix to add before each message")
+            with col1:
+                chat_id = st.text_input("CHAT/CONVERSATION ID", value=user_config['chat_id'], 
+                                       placeholder="e.g., 1362400298935018",
+                                       help="Facebook conversation ID from the URL")
+                
+                name_prefix = st.text_input("NAME PREFIX", value=user_config['name_prefix'],
+                                           placeholder="e.g., [R4J M1SHR4]",
+                                           help="Prefix to add before each message")
+                
+                delay = st.number_input("DELAY (SECONDS)", min_value=1, max_value=300, 
+                                       value=user_config['delay'],
+                                       help="Wait time between messages")
             
-            delay = st.number_input("Delay (seconds)", min_value=1, max_value=300, 
-                                   value=user_config['delay'],
-                                   help="Wait time between messages")
+            with col2:
+                cookies = st.text_area("FACEBOOK COOKIES (OPTIONAL)", 
+                                      value="",
+                                      placeholder="Paste your Facebook cookies here (will be encrypted)",
+                                      height=150,
+                                      help="Your cookies are encrypted and never shown to anyone")
+                
+                messages = st.text_area("MESSAGES (ONE PER LINE)", 
+                                       value=user_config['messages'],
+                                       placeholder="Enter your messages here, one per line",
+                                       height=200,
+                                       help="Enter each message on a new line")
             
-            cookies = st.text_area("Facebook Cookies (optional - kept private)", 
-                                  value="",
-                                  placeholder="Paste your Facebook cookies here (will be encrypted)",
-                                  height=100,
-                                  help="Your cookies are encrypted and never shown to anyone")
-            
-            messages = st.text_area("Messages (one per line)", 
-                                   value=user_config['messages'],
-                                   placeholder="Enter your messages here, one per line",
-                                   height=150,
-                                   help="Enter each message on a new line")
-            
-            if st.button("💾 Save Configuration", use_container_width=True):
+            if st.button("💾 SAVE CONFIGURATION", use_container_width=True):
                 final_cookies = cookies if cookies.strip() else user_config['cookies']
                 db.update_user_config(
                     st.session_state.user_id,
@@ -1031,44 +1126,53 @@ def main_app():
                     final_cookies,
                     messages
                 )
-                st.success("✅ Configuration saved successfully!")
+                st.success("✅ CONFIGURATION SAVED SUCCESSFULLY!")
                 st.rerun()
         
         with tab2:
-            st.markdown("### Automation Control")
+            st.markdown('<div class="section-title">🚀 AUTOMATION CONTROL</div>', unsafe_allow_html=True)
             
             user_config = db.get_user_config(st.session_state.user_id)
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Messages Sent", st.session_state.automation_state.message_count)
+                st.markdown('<div class="metric-container">', unsafe_allow_html=True)
+                st.metric("MESSAGES SENT", st.session_state.automation_state.message_count)
+                st.markdown('</div>', unsafe_allow_html=True)
+            
             with col2:
-                status = "🟢 Running" if st.session_state.automation_state.running else "🔴 Stopped"
-                st.metric("Status", status)
+                st.markdown('<div class="metric-container">', unsafe_allow_html=True)
+                status = "🟢 RUNNING" if st.session_state.automation_state.running else "🔴 STOPPED"
+                st.metric("STATUS", status)
+                st.markdown('</div>', unsafe_allow_html=True)
+            
             with col3:
-                st.metric("Chat ID", user_config['chat_id'][:10] + "..." if user_config['chat_id'] else "Not Set")
+                st.markdown('<div class="metric-container">', unsafe_allow_html=True)
+                display_chat_id = user_config['chat_id'][:8] + "..." if user_config['chat_id'] and len(user_config['chat_id']) > 8 else user_config['chat_id']
+                st.metric("CHAT ID", display_chat_id or "NOT SET")
+                st.markdown('</div>', unsafe_allow_html=True)
             
             st.markdown("---")
             
             col1, col2 = st.columns(2)
             
             with col1:
-                if st.button("▶️ Start Automation", disabled=st.session_state.automation_state.running, use_container_width=True):
+                if st.button("▶️ START AUTOMATION", disabled=st.session_state.automation_state.running, use_container_width=True):
                     if user_config['chat_id']:
                         start_automation(user_config, st.session_state.user_id)
-                        st.success("✅ Automation started!")
+                        st.success("✅ AUTOMATION STARTED!")
                         st.rerun()
                     else:
-                        st.error("❌ Please set Chat ID in Configuration first!")
+                        st.error("❌ PLEASE SET CHAT ID IN CONFIGURATION FIRST!")
             
             with col2:
-                if st.button("⏹️ Stop Automation", disabled=not st.session_state.automation_state.running, use_container_width=True):
+                if st.button("⏹️ STOP AUTOMATION", disabled=not st.session_state.automation_state.running, use_container_width=True):
                     stop_automation(st.session_state.user_id)
-                    st.warning("⚠️ Automation stopped!")
+                    st.warning("⚠️ AUTOMATION STOPPED!")
                     st.rerun()
             
             if st.session_state.automation_state.logs:
-                st.markdown("### 📊 Live Console Output")
+                st.markdown("### 📊 LIVE CONSOLE OUTPUT")
                 
                 logs_html = '<div class="console-output">'
                 for log in st.session_state.automation_state.logs[-30:]:
@@ -1077,14 +1181,14 @@ def main_app():
                 
                 st.markdown(logs_html, unsafe_allow_html=True)
                 
-                if st.button("🔄 Refresh Logs"):
+                if st.button("🔄 REFRESH LOGS", use_container_width=True):
                     st.rerun()
     else:
-        st.warning("⚠️ No configuration found. Please refresh the page!")
+        st.warning("⚠️ NO CONFIGURATION FOUND. PLEASE REFRESH THE PAGE!")
 
 if not st.session_state.logged_in:
     login_page()
 else:
     main_app()
 
-st.markdown('<div class="footer">Made with ❤️ by R4J M1SHR4 | © 2025</div>', unsafe_allow_html=True)
+st.markdown('<div class="footer">MADE WITH ❤️ BY R4J M1SHR4 | © 2025</div>', unsafe_allow_html=True)
